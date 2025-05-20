@@ -114,7 +114,7 @@
       },
       created() {
         // 页面加载时获取所有便签
-        fetch('http://10.101.54.21:30000/api/notes')
+        fetch('http://47.97.60.69:30000/api/notes')
           .then(res => res.json())
           .then(data => {
             this.notes = data.map(item => ({
@@ -156,7 +156,7 @@
             if (this.editingIdx !== null) {
               // 编辑已有
               const note = this.notes[this.editingIdx];
-              fetch(`http://10.101.54.21:30000/api/notes/${note.id}`, {
+              fetch(`http://47.97.60.69:30000/api/notes/${note.id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -178,7 +178,7 @@
               return;
             } else {
               // 新增
-              fetch('http://10.101.54.21:30000/api/notes', {
+              fetch('http://47.97.60.69:30000/api/notes', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
