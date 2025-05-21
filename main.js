@@ -13,8 +13,8 @@ createApp({
   computed: {
     backendUrl() {
       return this.backendType === 'public'
-        ? 'http://47.97.60.69:30000'
-        : 'http://10.101.54.21:30000';
+        ? 'http://47.97.60.69'
+        : 'http://10.101.54.21';
     }
   },
   created() {
