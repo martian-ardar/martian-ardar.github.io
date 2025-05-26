@@ -68,25 +68,74 @@
       border-radius: 8px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
+    .note-image {
+      max-width: 150px;
+      max-height: 150px;
+      position: absolute;
+      cursor: pointer;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      transition: box-shadow 0.2s;
+    }
+    .note-image:hover {
+      box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+    }
+    /* 大图弹窗样式 */
+    .img-popup {
+      position: fixed;
+      left: 0;
+      top: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+    }
+    .img-popup img {
+      max-width: 90vw;
+      max-height: 90vh;
+      border-radius: 12px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.2);
+      background: #fff;
+    }
   </style>
 </head>
 <body>
   <div id="app">
     <div class="container">
-      <h1>笔记墙</h1>
+      <h3>笔记墙</h3>
       <div
         class="note-area"
         @click="handleAreaClick($event)"
+        @dragover.prevent
+        @drop="handleDropImage"
         ref="noteArea"
       >
         <div
           v-for="(item, idx) in notes"
           :key="idx"
-          class="note-text"
-          :style="{left: item.x + 'px', top: item.y + 'px', visibility: (inputing && editingIdx === idx) ? 'hidden' : 'visible'}"
-          @click.stop="editNote(idx, $event)"
         >
-          {{ item.text }}
+          <div
+            v-if="item.type !== 'image'"
+            class="note-text"
+            :style="{left: item.x + 'px', top: item.y + 'px', visibility: (inputing && editingIdx === idx) ? 'hidden' : 'visible'}"
+            @click.stop="editNote(idx, $event)"
+          >
+            {{ item.text }}
+          </div>
+          <img
+            v-else-if="item.type === 'image' && item.thumb"
+            class="note-image"
+            :src="item.thumb"
+            :style="{left: item.x + 'px', top: item.y + 'px'}"
+            @click.stop="showImage(item.img)"
+            alt="图片"
+            draggable="true"
+            @dragstart="handleImageDragStart(idx, $event)"
+            @dragend="handleImageDragEnd(idx, $event)"
+          />
         </div>
         <input
           v-if="inputing"
@@ -97,6 +146,13 @@
           @blur="saveInput"
           @keyup.enter="saveInput"
         />
+        <!-- 图片上传按钮 -->
+        <input type="file" accept="image/*" @change="handleImageUpload" style="position:absolute;right:8px;bottom:8px;z-index:10;opacity:0;width:40px;height:40px;cursor:pointer;" ref="imgInput">
+        <button @click="$refs.imgInput.click()" style="position:absolute;right:8px;bottom:8px;z-index:11;width:40px;height:40px;border-radius:50%;background:#f0f0f0;border:none;box-shadow:0 1px 4px rgba(0,0,0,0.08);font-size:1.5em;cursor:pointer;">+</button>
+      </div>
+      <!-- 大图弹窗 -->
+      <div v-if="showImg" @click="showImg=false" class="img-popup">
+        <img :src="showImgSrc" />
       </div>
       <div style="position: fixed; left: 24px; bottom: 24px; z-index: 1000; background: rgba(255,255,255,0.95); border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); padding: 6px 16px;">
         <label for="backendSelect">环境：</label>
