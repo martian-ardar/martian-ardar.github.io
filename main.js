@@ -1,6 +1,5 @@
 const { createApp } = Vue;
-createApp({
-  data() {
+createApp({  data() {
     return {
       notes: [],
       inputing: false,
@@ -11,6 +10,12 @@ createApp({
       showImg: false,
       showImgSrc: '',
       draggingImageIdx: null, // 新增，记录当前拖拽的图片索引
+      contextMenu: {
+        show: false,
+        x: 0,
+        y: 0,
+        noteIdx: null
+      },
     }
   },
   computed: {
@@ -19,7 +24,8 @@ createApp({
         ? 'http://47.97.60.69'
         : 'http://10.101.54.21';
     }
-  },  created() {    // 页面加载时获取所有便签
+  },  created() {
+    // 页面加载时获取所有便签
     fetch(this.backendUrl + '/api/notes')
       .then(res => {
         if (!res.ok) {
@@ -85,6 +91,21 @@ createApp({
           }
         });
       });
+  },
+  mounted() {
+    // 点击页面其他地方关闭右键菜单    document.addEventListener('click', this.hideContextMenu);
+    // 只拦截noteArea之外的右键点击，防止与笔记的右键菜单冲突
+    document.addEventListener('contextmenu', (e) => {
+      // 检查点击是否在noteArea外
+      const noteArea = this.$refs.noteArea;
+      if (noteArea && !noteArea.contains(e.target)) {
+        this.hideContextMenu();
+      }
+    });
+  },
+  unmounted() {
+    document.removeEventListener('click', this.hideContextMenu);
+    document.removeEventListener('contextmenu', this.hideContextMenu);
   },
   watch: {
     backendType() {
@@ -557,6 +578,50 @@ createApp({
           });
       }
       this.draggingImageIdx = null;
+    },
+    hideContextMenu() {
+      this.contextMenu.show = false;
+    },    showContextMenu(idx, e) {
+      e.preventDefault();
+      this.contextMenu.noteIdx = idx;
+      this.contextMenu.x = e.clientX;
+      this.contextMenu.y = e.clientY;
+      this.contextMenu.show = true;
+    },    deleteNote() {
+      const idx = this.contextMenu.noteIdx;
+      if (idx === null || idx === undefined) return;
+      const note = this.notes[idx];
+      if (!note || !note.id) return;
+      
+      // 显示确认操作
+      if (confirm('确定要删除这条记录吗？')) {
+        console.log('删除笔记:', note);
+        
+        // 调用删除接口
+        fetch(`${this.backendUrl}/api/notes/${note.id}`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' }
+        })
+          .then(res => {
+            if (!res.ok) {
+              throw new Error(`HTTP error! Status: ${res.status}`);
+            }
+            return res.json();
+          })
+          .then(data => {
+            console.log('删除成功:', data);
+            // 删除成功，更新前端状态
+            this.notes.splice(idx, 1);
+            this.contextMenu.show = false;
+          })
+          .catch(err => {
+            console.error('删除笔记失败:', err);
+            alert('删除失败，请稍后再试');
+          });
+      } else {
+        // 用户取消删除
+        this.contextMenu.show = false;
+      }
     },
   }
 }).mount('#app');

@@ -100,6 +100,52 @@
       box-shadow: 0 4px 24px rgba(0,0,0,0.2);
       background: #fff;
     }
+    
+    /* 右键菜单样式 */
+    .context-menu {
+      position: absolute;
+      background: white;
+      min-width: 140px;
+      box-shadow: 0 3px 15px rgba(0,0,0,0.2);
+      border-radius: 8px;
+      z-index: 1000;
+      padding: 5px 0;
+      overflow: hidden;
+      animation: fadeIn 0.15s ease-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .context-menu-item {
+      padding: 12px 16px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+    }
+    .context-menu-item:hover {
+      background: #f5f5f5;
+    }
+    .context-menu-item.delete {
+      color: #ff5252;
+    }
+    .context-menu-item.delete:hover {
+      background: #ffeeee;
+    }
+    .context-menu-item::before {
+      content: '';
+      margin-right: 8px;
+      width: 16px;
+      height: 16px;
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+    }
+    .context-menu-item.delete::before {
+      background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23ff5252"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>');
+    }
   </style>
 </head>
 <body>
@@ -122,6 +168,7 @@
             class="note-text"
             :style="{left: item.x + 'px', top: item.y + 'px', visibility: (inputing && editingIdx === idx) ? 'hidden' : 'visible'}"
             @click.stop="editNote(idx, $event)"
+            @contextmenu.prevent="showContextMenu(idx, $event)"
           >
             {{ item.text }}
           </div>
@@ -131,6 +178,7 @@
             :src="item.thumb"
             :style="{left: item.x + 'px', top: item.y + 'px'}"
             @click.stop="showImage(item.img)"
+            @contextmenu.prevent="showContextMenu(idx, $event)"
             alt="图片"
             draggable="true"
             @dragstart="handleImageDragStart(idx, $event)"
@@ -154,6 +202,12 @@
       <div v-if="showImg" @click="showImg=false" class="img-popup">
         <img :src="showImgSrc" />
       </div>
+      
+      <!-- 右键菜单 -->
+      <div v-if="contextMenu.show" class="context-menu" :style="{left: contextMenu.x + 'px', top: contextMenu.y + 'px'}">
+        <div class="context-menu-item delete" @click="deleteNote">删除</div>
+      </div>
+      
       <div style="position: fixed; left: 24px; bottom: 24px; z-index: 1000; background: rgba(255,255,255,0.95); border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); padding: 6px 16px;">
         <label for="backendSelect">环境：</label>
         <select id="backendSelect" v-model="backendType" style="font-size:1em;">
