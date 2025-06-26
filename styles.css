@@ -1,0 +1,303 @@
+body {
+  font-family: "微软雅黑", Arial, sans-serif;
+  background: #f5f6fa;
+  margin: 0;
+  padding: 0;
+}
+.container {
+  width: 90vw;
+  max-width: none;
+  min-width: 320px;
+  margin: 4px auto; /* 原40px，改为16px，让标题栏更靠上 */
+  padding: 24px;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+h1 {
+  text-align: center;
+  margin-bottom: 32px;
+  font-size: 2.5em;
+  color: #222;
+  letter-spacing: 2px;
+}
+.note-area {
+  position: relative;
+  width: 100%;
+  height: 50vh;
+  min-height: 120px;
+  max-height: none;
+  max-width: none;
+  border: 2px solid #d1d8e0;
+  border-radius: 12px;
+  background: #fafbfc;
+  cursor: text;
+  overflow: auto;
+  box-sizing: border-box;
+  transition: height 0.2s;
+  resize: both;
+}
+.note-text {
+  position: absolute;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  color: #333;
+  font-size: 1.2em;
+}
+.input-box {
+  position: absolute;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 1.2em;
+  width: auto;
+  min-width: 50px;
+  max-width: 200px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+.note-image {
+  max-width: 150px;
+  max-height: 150px;
+  position: absolute;
+  cursor: pointer;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  transition: box-shadow 0.2s;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none; /* 防止拖拽时选中文本 */
+}
+.note-image:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+}
+
+/* 拖拽时的样式 */
+.note-image:active {
+  cursor: grabbing;
+  opacity: 0.8;
+  transform: scale(1.05);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+}
+
+/* 大图弹窗样式 */
+.img-popup {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+.img-popup img {
+  max-width: 90vw;
+  max-height: 90vh;
+  border-radius: 12px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.2);
+  background: #fff;
+}
+
+/* 右键菜单样式 */
+.context-menu {
+  position: fixed;
+  background: white;
+  min-width: 140px;
+  box-shadow: 0 3px 15px rgba(0,0,0,0.2);
+  border-radius: 8px;
+  z-index: 9999;
+  padding: 5px 0;
+  overflow: hidden;
+  display: block;
+}
+/* 专门为Dock右键菜单添加样式 */
+/* 动画样式 */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.dock-context-menu {
+  background: rgba(255,255,255,0.95);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(0,0,0,0.1);
+  min-width: 160px;
+  animation: fadeIn 0.15s ease-out;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.05);
+  pointer-events: auto !important; /* 菜单本身可接收点击事件 */
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.context-menu-item {
+  padding: 12px 16px;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  transition: background 0.15s;
+}
+.context-menu-item:hover {
+  background: #f5f5f5;
+}
+.context-menu-item.selected {
+  background: #e6f7ff;
+  color: #1890ff;
+  font-weight: 500;
+}
+.context-menu-item.delete {
+  color: #ff5252;
+}
+.context-menu-item.delete:hover {
+  background: #ffeeee;
+}
+.menu-icon {
+  width: 18px;
+  height: 18px;
+  margin-right: 8px;
+  display: inline-block;
+}
+.public-icon {
+  background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%231890ff"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>') no-repeat center;
+}
+.internal-icon {
+  background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23ff9800"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM9 6c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9V6zm9 14H6V10h12v10zm-6-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/></svg>') no-repeat center;
+}
+.context-menu-item::before {
+  content: '';
+  margin-right: 8px;
+  width: 16px;
+  height: 16px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+.context-menu-item.delete::before {
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23ff5252"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>');
+}
+/* Dock 样式 */
+.mac-dock {
+  position: fixed;
+  left: 50%;
+  bottom: 10px; /* 更靠下 */
+  transform: translateX(-50%);
+  z-index: 3000;
+  display: flex;
+  align-items: flex-end;
+  background: rgba(255,255,255,0.85);
+  border-radius: 24px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+  padding: 6px 18px 5px 18px; /* 缩小padding */
+  min-width: 108px;
+  height: 38px; /* 原64px，降为60% */
+  gap: 18px;
+  border: 1.5px solid #e0e0e0;
+}
+.dock-app {
+  width: 29px; /* 原48px，降为60% */
+  height: 29px;
+  border-radius: 10px;
+  background: linear-gradient(145deg,#f5f6fa 60%,#e0e0e0 100%);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.15s;
+  position: relative;
+}
+.dock-app.active {
+  box-shadow: 0 4px 16px #4f8cff44;
+  transform: scale(1.12);
+}
+.dock-app img {
+  width: 19px; /* 原32px，降为60% */
+  height: 19px;
+  pointer-events: none;
+}
+.dock-app-label {
+  position: absolute;
+  left: 50%;
+  bottom: -28px;
+  transform: translateX(-50%);
+  background: #222;
+  color: #fff;
+  font-size: 13px;
+  border-radius: 6px;
+  padding: 2px 10px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+.dock-app:hover .dock-app-label {
+  opacity: 1;
+}
+/* 记笔记弹窗 */
+.note-app-modal {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  min-width: 0;
+  min-height: 0;
+  max-width: none;
+  max-height: none;
+  transform: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  z-index: 2001;
+  padding: 0;
+  animation: fadeIn 0.18s;
+}
+.note-app-modal > .container {
+  width: 90vw;
+  height: 92vh;
+  min-width: 0;
+  min-height: 0;
+  max-width: 1200px;
+  max-height: 98vh;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  background: #fff;
+  border-radius: 18px;
+  padding: 24px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding-top: 12px;
+}
+.note-app-modal > .container h3 {
+  margin-top: 0;
+  margin-bottom: 14px;
+  font-size: 1.3em;
+  letter-spacing: 1px;
+}
+@media (max-width: 600px) {
+  .note-app-modal > .container { width: 99vw; height: 98vh; padding: 6px; }
+  .mac-dock { min-width: 60px; padding: 4px 4px; height: 24px; gap: 8px; }
+  .dock-app { width: 15px; height: 15px; }
+  .dock-app img { width: 10px; height: 10px; }
+}
+/* 遮罩 */
+.modal-mask {
+  position: fixed;
+  left: 0; top: 0; width: 100vw; height: 100vh;
+  background: rgba(0,0,0,0.12);
+  z-index: 2000;
+}
