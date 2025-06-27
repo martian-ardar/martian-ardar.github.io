@@ -152,8 +152,8 @@ createApp({
   computed: {
     backendUrl() {
       return this.backendType === 'public'
-        ? 'http://47.97.60.69'
-        : 'http://10.57.159.9';
+        ? 'https://47.97.60.69'
+        : 'https://SERVER_IP';
     }
   },
   

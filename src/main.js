@@ -248,4 +248,3 @@ createApp({
     }
   }
 }).mount('#app');
-
