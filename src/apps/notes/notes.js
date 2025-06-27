@@ -615,13 +615,172 @@ createApp({
     handleDropImage(e) {
       e.preventDefault();
       
+      // 1. 首先检查是否是拖拽本地文件（本地图片上传）
+      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        console.log('检测到拖拽本地图片文件');
+        const file = e.dataTransfer.files[0];
+        
+        // 只处理图片文件
+        if (!file.type.startsWith('image/')) {
+          console.warn('拖拽的不是图片文件:', file.type);
+          return;
+        }
+        
+        // 计算放置位置
+        const noteArea = this.$refs.noteArea;
+        const rect = noteArea.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        
+        // 上传图片文件
+        const formData = new FormData();
+        formData.append('image', file);
+        formData.append('x', x);
+        formData.append('y', y);
+        
+        // 支持两种API端点：/api/images 和 /api/upload
+        const uploadUrl = this.backendUrl + '/api/images';
+        console.log('上传图片到:', uploadUrl);
+        
+        fetch(uploadUrl, {
+          method: 'POST',
+          body: formData
+        })
+          .then(res => {
+            if (!res.ok) {
+              throw new Error(`HTTP error! Status: ${res.status}`);
+            }
+            return res.json();
+          })
+          .then(data => {
+            console.log('上传拖拽图片成功:', data);
+            // 添加到笔记列表
+            const imgUrl = data.img.startsWith('http')
+              ? data.img
+              : this.backendUrl + data.img;
+            
+            const newImage = {
+              id: data.id,
+              type: 'image',
+              img: imgUrl,
+              x: data.x || x,
+              y: data.y || y,
+              thumb: null
+            };
+            
+            this.notes.push(newImage);
+            
+            // 生成缩略图
+            const idx = this.notes.length - 1;
+            const img = new Image();
+            img.crossOrigin = 'Anonymous';
+            img.onload = () => {
+              const max = 150;
+              let w = img.width, h = img.height;
+              if (w > h && w > max) { h = h * max / w; w = max; }
+              else if (h > w && h > max) { w = w * max / h; h = max; }
+              else if (w > max) { w = h = max; }
+              const canvas = document.createElement('canvas');
+              canvas.width = w; canvas.height = h;
+              const ctx = canvas.getContext('2d');
+              ctx.drawImage(img, 0, 0, w, h);
+              this.notes[idx].thumb = canvas.toDataURL('image/png');
+              this.$forceUpdate();
+            };
+            img.onerror = () => {
+              console.error('无法加载图片缩略图:', imgUrl);
+              // 创建一个简单的默认缩略图
+              const canvas = document.createElement('canvas');
+              canvas.width = 150; canvas.height = 150;
+              const ctx = canvas.getContext('2d');
+              ctx.fillStyle = '#f0f0f0';
+              ctx.fillRect(0, 0, 150, 150);
+              ctx.fillStyle = '#999';
+              ctx.font = '24px Arial';
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'middle';
+              ctx.fillText('图片加载失败', 75, 75);
+              this.notes[idx].thumb = canvas.toDataURL('image/png');
+              this.$forceUpdate();
+            };
+            img.src = imgUrl;
+          })
+          .catch(error => {
+            console.error('拖拽上传图片失败:', error);
+            // 尝试使用备选API
+            const backupUrl = this.backendUrl + '/api/upload';
+            console.log('尝试备选上传端点:', backupUrl);
+            
+            const backupFormData = new FormData();
+            backupFormData.append('file', file); // 使用不同的字段名
+            backupFormData.append('x', x);
+            backupFormData.append('y', y);
+            
+            fetch(backupUrl, {
+              method: 'POST',
+              body: backupFormData
+            })
+              .then(res => res.json())
+              .then(data => {
+                console.log('备选上传成功:', data);
+                // 处理响应并添加到笔记列表
+                const imgUrl = data.img.startsWith('http')
+                  ? data.img
+                  : this.backendUrl + data.img;
+                
+                const newImage = {
+                  id: data.id,
+                  type: 'image',
+                  img: imgUrl,
+                  x: data.x || x,
+                  y: data.y || y,
+                  thumb: null
+                };
+                
+                this.notes.push(newImage);
+                // 同样生成缩略图
+                const idx = this.notes.length - 1;
+                const img = new Image();
+                img.crossOrigin = 'Anonymous';
+                img.onload = () => {
+                  const max = 150;
+                  let w = img.width, h = img.height;
+                  if (w > h && w > max) { h = h * max / w; w = max; }
+                  else if (h > w && h > max) { w = w * max / h; h = max; }
+                  else if (w > max) { w = h = max; }
+                  const canvas = document.createElement('canvas');
+                  canvas.width = w; canvas.height = h;
+                  const ctx = canvas.getContext('2d');
+                  ctx.drawImage(img, 0, 0, w, h);
+                  this.notes[idx].thumb = canvas.toDataURL('image/png');
+                  this.$forceUpdate();
+                };
+                img.src = imgUrl;
+              })
+              .catch(err => {
+                console.error('两种上传方式均失败:', err);
+              });
+          });
+          
+        return;
+      }
+      
+      // 2. 处理拖拽已有的图片便签（移动位置）
       try {
-        const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+        // 尝试获取拖拽数据
+        const dataStr = e.dataTransfer.getData('text/plain');
+        if (!dataStr) {
+          console.warn('没有获取到拖拽数据');
+          return;
+        }
+        
+        const data = JSON.parse(dataStr);
         const noteIdx = data.noteIdx;
         const offsetX = data.offsetX;
         const offsetY = data.offsetY;
         
         if (typeof noteIdx !== 'number' || !this.notes[noteIdx]) {
+          console.warn('找不到对应的便签:', noteIdx);
           return;
         }
         
@@ -647,6 +806,15 @@ createApp({
             x: x,
             y: y
           })
+        })
+        .then(response => {
+          if (!response.ok) {
+            return Promise.reject(`HTTP错误，状态: ${response.status}`);
+          }
+          return response.json();
+        })
+        .then(data => {
+          console.log('便签位置更新成功:', data);
         })
         .catch(error => {
           console.error('更新位置失败:', error);
