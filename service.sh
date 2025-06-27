@@ -6,7 +6,7 @@ device=$(route|grep default|awk '{print$8}'|uniq)
 info=$(ip addr show $device)
 local_ip=$(echo $info|sed "s/.*\ inet\ \(.*\)\/.* brd.*\ .*/\1/")
 
-grep '\bSERVER_IP\b'
+grep '\bSERVER_IP\b' \
     -r . --exclude-dir=.git \
     --exclude-dir=certs \
     | awk -F ':' '{print$1}' \

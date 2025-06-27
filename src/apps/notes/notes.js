@@ -156,7 +156,7 @@ createApp({
         : 'https://SERVER_IP';
     }
   },
-  
+
   created() {
     // 从localStorage中获取后端类型
     const savedBackendType = localStorage.getItem('backendType');
@@ -164,15 +164,15 @@ createApp({
       this.backendType = savedBackendType;
       console.log('从localStorage获取后端类型:', this.backendType);
     }
-    
+
     // 页面加载时获取所有便签
     this.fetchNotes();
   },
-  
+
   mounted() {
     // 点击页面其他地方关闭右键菜单
     document.addEventListener('click', this.hideContextMenu);
-    
+
     // 注册全局右键菜单处理
     document.addEventListener('contextmenu', (e) => {
       // 检查是否在 dock 区域
@@ -181,16 +181,16 @@ createApp({
         // 不处理dock区域的右键菜单
         return;
       }
-      
+
       // 关闭菜单
       ContextMenuManager.close();
     });
-    
+
     // 监听来自父窗口的消息，用于环境类型更新
     window.addEventListener('message', (event) => {
       if (event.data && event.data.type === 'updateBackendType') {
         console.log('收到来自父窗口的环境更新:', event.data.backendType);
-        
+
         // 更新环境类型并刷新数据
         if (this.backendType !== event.data.backendType) {
           this.setBackendType(event.data.backendType);
@@ -198,12 +198,12 @@ createApp({
       }
     });
   },
-  
+
   unmounted() {
     document.removeEventListener('click', this.hideContextMenu);
     ContextMenuManager.close();
   },
-  
+
   methods: {
     fetchNotes() {
       fetch(this.backendUrl + '/api/notes')
@@ -218,8 +218,8 @@ createApp({
           this.notes = data.map(item => {
             if (item.img) {
               // 是图片类型，生成缩略图thumb
-              const imgUrl = item.img.startsWith('http') 
-                ? item.img 
+              const imgUrl = item.img.startsWith('http')
+                ? item.img
                 : this.backendUrl + item.img;
               return { ...item, type: 'image', img: imgUrl, thumb: null };
             } else {
@@ -232,7 +232,7 @@ createApp({
               };
             }
           });
-          
+
           // 生成图片缩略图
           this.notes.forEach((note, idx) => {
             if (note.type === 'image') {
@@ -272,23 +272,23 @@ createApp({
           });
         });
     },
-    
+
     hideContextMenu() {
       this.contextMenu.show = false;
     },
-    
+
     showContextMenu(idx, e) {
       this.contextMenu.noteIdx = idx;
       this.contextMenu.x = e.clientX;
       this.contextMenu.y = e.clientY;
       this.contextMenu.show = true;
     },
-    
+
     deleteNote() {
       const idx = this.contextMenu.noteIdx;
       if (idx !== null && this.notes[idx]) {
         const note = this.notes[idx];
-        
+
         // 发送删除请求到服务器
         fetch(this.backendUrl + '/api/notes/' + note.id, {
           method: 'DELETE'
@@ -311,13 +311,13 @@ createApp({
           });
       }
     },
-    
+
     // Dock相关方法
     showDockMenu(e) {
       console.log('[dock] 右键事件触发', e);
       e.preventDefault();
       e.stopPropagation();
-      
+
       // 使用全局菜单管理器创建菜单
       ContextMenuManager.create({
         x: e.clientX,
@@ -346,25 +346,25 @@ createApp({
         ]
       });
     },
-    
+
     setBackendType(type) {
       // 如果已经是当前环境，不做任何改变
       if (this.backendType === type) {
         return;
       }
-      
+
       // 切换环境
       this.backendType = type;
-      
+
       // 保存选择到localStorage
       localStorage.setItem('backendType', type);
       console.log('环境类型已保存到localStorage:', type);
-      
+
       // 立即刷新数据
       this.notes = [];
       this.fetchNotes();
     },
-    
+
     // 显示环境切换通知
     showBackendSwitchNotification(envName) {
       // 提示用户环境已切换
@@ -383,7 +383,7 @@ createApp({
         font-size: 14px;
       `;
       document.body.appendChild(notification);
-      
+
       // 2秒后移除通知
       setTimeout(() => {
         notification.style.opacity = '0';
@@ -395,27 +395,27 @@ createApp({
         }, 500);
       }, 2000);
     },
-    
+
     toggleNoteApp() {
       this.showNoteApp = !this.showNoteApp;
-      
+
       // 如果在单独的笔记应用页面，处理关闭行为
       if (!this.showNoteApp && window.location.href.includes('/apps/notes/')) {
         window.location.href = '/';
       }
     },
-    
+
     handleAreaClick(e) {
       if (this.inputing) return;
       const noteArea = e.currentTarget;
       const rect = noteArea.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
-      
+
       this.inputPos = { x, y };
       this.inputing = true;
       this.editingIdx = null;
-      
+
       this.$nextTick(() => {
         const inputEl = this.$refs.inputBox;
         if (inputEl) {
@@ -423,16 +423,16 @@ createApp({
         }
       });
     },
-    
+
     editNote(idx, e) {
       const note = this.notes[idx];
       if (!note || note.type === 'image') return;
-      
+
       this.inputPos = { x: note.x, y: note.y };
       this.inputText = note.text;
       this.inputing = true;
       this.editingIdx = idx;
-      
+
       this.$nextTick(() => {
         const inputEl = this.$refs.inputBox;
         if (inputEl) {
@@ -441,7 +441,7 @@ createApp({
         }
       });
     },
-    
+
     saveInput() {
       if (!this.inputText.trim()) {
         this.inputing = false;
@@ -449,11 +449,19 @@ createApp({
         this.editingIdx = null;
         return;
       }
-      
+
       if (this.editingIdx !== null) {
         // 编辑已有便签
         const note = this.notes[this.editingIdx];
-        
+
+        // 先在UI中更新便签，实现乐观更新
+        this.notes[this.editingIdx] = {
+          id: note.id,
+          text: this.inputText,
+          x: this.inputPos.x,
+          y: this.inputPos.y
+        };
+
         fetch(this.backendUrl + '/api/notes/' + note.id, {
           method: 'PUT',
           headers: {
@@ -472,12 +480,8 @@ createApp({
             return res.json();
           })
           .then(data => {
-            this.notes[this.editingIdx] = {
-              id: data.id || note.id,
-              text: this.inputText,
-              x: this.inputPos.x,
-              y: this.inputPos.y
-            };
+            // API请求成功，可以更新ID（如果服务器生成了新ID）
+            this.notes[this.editingIdx].id = data.id || note.id;
           })
           .catch(error => {
             console.error('更新便签失败:', error);
@@ -485,6 +489,24 @@ createApp({
           });
       } else {
         // 添加新便签
+
+        // 先创建一个临时ID，用于乐观更新
+        const tempId = 'temp_' + Date.now();
+
+        // 先在UI中添加新便签，不等待API请求完成
+        const newNote = {
+          id: tempId,
+          text: this.inputText,
+          x: this.inputPos.x,
+          y: this.inputPos.y
+        };
+
+        // 添加到列表中以立即显示
+        this.notes.push(newNote);
+
+        // 记住新笔记的索引位置
+        const noteIndex = this.notes.length - 1;
+
         fetch(this.backendUrl + '/api/notes', {
           method: 'POST',
           headers: {
@@ -503,16 +525,16 @@ createApp({
             return res.json();
           })
           .then(data => {
-            this.notes.push({
-              id: data.id,
-              text: this.inputText,
-              x: this.inputPos.x,
-              y: this.inputPos.y
-            });
+            // API请求成功，更新临时ID为服务器返回的真实ID
+            if (this.notes[noteIndex]) {
+              this.notes[noteIndex].id = data.id;
+            }
           })
           .catch(error => {
             console.error('添加便签失败:', error);
             alert('保存失败，请重试。');
+            // 如果失败，可以考虑从列表中移除这条笔记
+            // this.notes = this.notes.filter(note => note.id !== tempId);
           });
       }
       
