@@ -1,6 +1,7 @@
 body {
   font-family: "微软雅黑", Arial, sans-serif;
-  background: #f5f6fa;
+  background: #f5f6fa url('../static/background.jpg') no-repeat center center fixed;
+  background-size: cover;
   margin: 0;
   padding: 0;
   height: 100vh; /* 确保body占满整个视口高度 */
