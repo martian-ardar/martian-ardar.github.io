@@ -9,5 +9,5 @@ services:
       - ./nginx/conf/entrance.conf:/etc/nginx/nginx.conf
       - ./nginx/conf/server_1.conf:/etc/nginx/conf.d/default.conf
       - /var/log/notes/nginx:/var/log/nginx
-      - ./src:/web
+      - .:/web
     restart: unless-stopped

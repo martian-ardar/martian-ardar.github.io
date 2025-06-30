@@ -179,7 +179,7 @@ createApp({
       if (iframe) {
         // 如果iframe还未加载或需要重新加载
         if (!iframe.getAttribute('src') || iframe.getAttribute('src') === '') {
-          iframe.setAttribute('src', 'apps/notes/index.html');
+          iframe.setAttribute('src', 'src/apps/notes/index.html');
         }
       } else {
         console.error('找不到笔记应用iframe元素');

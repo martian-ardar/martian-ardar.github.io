@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>记录本</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <link rel="stylesheet" href="src/main.css">
+</head>
+<body>
+  <div id="app">
+    <!-- 笔记应用弹窗 - 使用style控制显示隐藏，而不是v-if -->
+    <div class="modal-mask" id="modalMask" @click="closeNoteApp" style="display:none;"></div>
+    <div class="note-app-modal" id="noteAppModal" style="display:none;">
+      <div class="note-app-container">
+        <div class="note-app-header">
+          <h3>笔记墙</h3>
+          <button class="close-button" @click="closeNoteApp">&times;</button>
+        </div>
+        <iframe id="notesIframe" class="note-app-iframe" src="src/apps/notes/index.html" frameborder="0" title="笔记应用" allow="autoplay; fullscreen"></iframe>
+      </div>
+    </div>
+    
+    <!-- Dock栏 -->
+    <div class="mac-dock">
+      <div class="dock-app" :class="{active: showNoteApp}" @click="toggleNoteApp" @contextmenu="showDockMenu">
+        <img src="https://img.icons8.com/fluency/48/notepad.png" alt="记笔记" />
+        <span class="dock-app-label">{{ showNoteApp ? '点击关闭' : '记笔记' }}</span>
+      </div>
+      <!-- 可以在这里添加更多dock应用图标 -->
+    </div>
+    
+    <!-- 调试信息 -->
+    <div style="position: fixed; left: 10px; top: 10px; background: rgba(255,255,255,0.7); padding: 5px; border-radius: 5px; font-size: 12px; display:none;">
+      右键点击状态: <span id="rightClickStatus">未触发</span>
+    </div>
+  </div>
+  
+  <script src="src/main.js"></script>
+</body>
+</html>
