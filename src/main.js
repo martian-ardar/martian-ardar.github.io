@@ -157,8 +157,15 @@ createApp({
   },
   
   methods: {
-    // 打开笔记应用
-    openNoteApp() {
+    // 切换笔记应用状态（打开或关闭）
+    toggleNoteApp() {
+      // 如果应用已经打开，则关闭它
+      if (this.showNoteApp) {
+        this.closeNoteApp();
+        return;
+      }
+      
+      // 否则打开应用
       this.showNoteApp = true;
       
       // 显示应用窗口

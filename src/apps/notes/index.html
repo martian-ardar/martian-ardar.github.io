@@ -14,7 +14,7 @@
         class="note-area"
           @click="handleAreaClick($event)"
           @dragover.prevent
-          @drop="handleDropImage"
+          @drop="handleNoteDrop"
           ref="noteArea"
         >
           <div
@@ -27,6 +27,9 @@
               :style="{left: item.x + 'px', top: item.y + 'px', visibility: (inputing && editingIdx === idx) ? 'hidden' : 'visible'}"
               @click.stop="editNote(idx, $event)"
               @contextmenu.prevent="showContextMenu(idx, $event)"
+              draggable="true"
+              @dragstart="handleTextNoteDragStart(idx, $event)"
+              @dragend="handleTextNoteDragEnd(idx, $event)"
             >
               {{ item.text }}
             </div>
@@ -60,7 +63,11 @@
         </div>
         <!-- 大图弹窗 -->
         <div v-if="showImg" @click="showImg=false" class="img-popup">
-          <img :src="showImgSrc" :alt="'笔记图片'" title="点击关闭查看" />
+          <div class="img-popup-container">
+            <img :src="showImgSrc" :alt="'笔记图片'" title="点击关闭预览" @click.stop />
+            <button class="close-image-btn" @click="showImg=false">&times;</button>
+            <div class="img-popup-hint">点击空白区域关闭</div>
+          </div>
         </div>
         <!-- 右键菜单 -->
         <div v-if="contextMenu.show" class="context-menu" :style="{left: contextMenu.x + 'px', top: contextMenu.y + 'px'}">

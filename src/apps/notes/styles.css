@@ -71,7 +71,33 @@ h1, h3 {
   word-wrap: break-word;
   color: #333;
   font-size: 1.2em;
+  padding: 10px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  cursor: move; /* 显示为可拖动的光标 */
+  transition: box-shadow 0.2s, transform 0.1s;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none; /* 防止拖拽时选中文本 */
 }
+
+/* 拖拽状态样式 */
+.note-text:active,
+.note-text:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.note-text[draggable="true"]:hover {
+  cursor: grab;
+}
+
+.note-text[draggable="true"]:active {
+  cursor: grabbing;
+  transform: scale(1.02);
+}
+
 .input-box {
   position: absolute;
   border: none;
@@ -89,14 +115,25 @@ h1, h3 {
   max-width: 150px;
   max-height: 150px;
   position: absolute;
-  cursor: pointer;
+  cursor: move; /* 显示为可拖动的光标 */
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-  transition: box-shadow 0.2s;
+  transition: box-shadow 0.2s, transform 0.1s;
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none; /* 防止拖拽时选中文本 */
+}
+
+/* 拖拽状态样式 */
+.note-image:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  cursor: grab;
+}
+
+.note-image:active {
+  cursor: grabbing;
+  transform: scale(1.02);
 }
 .note-image:hover {
   box-shadow: 0 4px 16px rgba(0,0,0,0.18);
@@ -117,18 +154,77 @@ h1, h3 {
   top: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(0,0,0,0.5);
+  background: rgba(0,0,0,0.75);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 2000;
+  animation: fadeIn 0.2s ease;
+  cursor: zoom-out;
 }
 .img-popup img {
   max-width: 90vw;
   max-height: 90vh;
   border-radius: 12px;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.2);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.3);
   background: #fff;
+  object-fit: contain;
+  transform: scale(0.95);
+  animation: zoomIn 0.3s forwards;
+}
+
+.img-popup-container {
+  position: relative;
+  max-width: 90vw;
+  max-height: 90vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.close-image-btn {
+  position: absolute;
+  top: -15px;
+  right: -15px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #fff;
+  color: #333;
+  border: none;
+  font-size: 20px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  z-index: 2001;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.close-image-btn:hover {
+  background: #f5f5f5;
+  transform: scale(1.1);
+}
+
+.img-popup-hint {
+  position: absolute;
+  bottom: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: rgba(255,255,255,0.8);
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.note-image {
+  cursor: zoom-in; /* 添加放大镜光标，提示可以点击查看大图 */
+}
+
+@keyframes zoomIn {
+  0% { transform: scale(0.8); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
 }
 
 /* 右键菜单样式 */

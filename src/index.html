@@ -23,9 +23,9 @@
     
     <!-- Dock栏 -->
     <div class="mac-dock">
-      <div class="dock-app" :class="{active: showNoteApp}" @click="openNoteApp" @contextmenu="showDockMenu">
+      <div class="dock-app" :class="{active: showNoteApp}" @click="toggleNoteApp" @contextmenu="showDockMenu">
         <img src="https://img.icons8.com/fluency/48/notepad.png" alt="记笔记" />
-        <span class="dock-app-label">记笔记</span>
+        <span class="dock-app-label">{{ showNoteApp ? '点击关闭' : '记笔记' }}</span>
       </div>
       <!-- 可以在这里添加更多dock应用图标 -->
     </div>

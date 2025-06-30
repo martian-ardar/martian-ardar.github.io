@@ -133,6 +133,8 @@ body {
 .dock-app.active {
   box-shadow: 0 4px 16px #4f8cff44;
   transform: scale(1.12);
+  background: linear-gradient(145deg,#e6f7ff 60%,#bae7ff 100%);
+  border-bottom: 2px solid #1890ff;
 }
 
 .dock-app img {
@@ -144,7 +146,7 @@ body {
 .dock-app-label {
   position: absolute;
   left: 50%;
-  bottom: -28px;
+  bottom: 38px; /* 修改为正值，使标签位于图标上方 */
   transform: translateX(-50%);
   background: #222;
   color: #fff;
@@ -155,6 +157,20 @@ body {
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.2s;
+}
+
+/* 添加小三角形指示器 */
+.dock-app-label::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -5px;
+  transform: translateX(-50%);
+  width: 0; 
+  height: 0; 
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 5px solid #222;
 }
 
 .dock-app:hover .dock-app-label {
@@ -225,5 +241,10 @@ body {
   .dock-app img { 
     width: 14px; 
     height: 14px; 
+  }
+  .dock-app-label {
+    font-size: 11px;
+    bottom: 30px; /* 调整小屏幕下标签位置 */
+    padding: 1px 8px;
   }
 }

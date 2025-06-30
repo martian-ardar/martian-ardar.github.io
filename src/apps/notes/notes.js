@@ -3,13 +3,13 @@ const { createApp } = Vue;
 // 创建全局菜单管理器
 const ContextMenuManager = {
   activeMenu: null,
-  
+
   create(options) {
     // 如果已有菜单，则先关闭
     if (this.activeMenu) {
       this.close();
     }
-    
+
     // 创建菜单容器
     const container = document.createElement('div');
     container.className = 'global-context-menu-container';
@@ -22,7 +22,7 @@ const ContextMenuManager = {
       z-index: 20000;
       pointer-events: none;
     `;
-    
+
     // 创建菜单元素
     const menu = document.createElement('div');
     menu.className = 'context-menu dock-context-menu';
@@ -41,7 +41,7 @@ const ContextMenuManager = {
       padding: 5px 0;
       animation: fadeIn 0.15s ease-out;
     `;
-    
+
     // 添加菜单选项
     options.items.forEach(item => {
       const menuItem = document.createElement('div');
@@ -49,18 +49,18 @@ const ContextMenuManager = {
       if (item.selected) {
         menuItem.classList.add('selected');
       }
-      
+
       // 创建图标
       if (item.icon) {
         const icon = document.createElement('i');
         icon.className = `menu-icon ${item.icon}`;
         menuItem.appendChild(icon);
       }
-      
+
       // 添加文本
       const text = document.createTextNode(item.text);
       menuItem.appendChild(text);
-      
+
       // 添加点击事件
       menuItem.addEventListener('click', () => {
         if (typeof item.onClick === 'function') {
@@ -68,48 +68,48 @@ const ContextMenuManager = {
         }
         this.close();
       });
-      
+
       menu.appendChild(menuItem);
     });
-    
+
     // 将菜单添加到容器
     container.appendChild(menu);
     document.body.appendChild(container);
-    
+
     // 调整菜单位置，确保在视口内
     const rect = menu.getBoundingClientRect();
     const winWidth = window.innerWidth;
     const winHeight = window.innerHeight;
-    
+
     if (rect.right > winWidth) {
       menu.style.left = (winWidth - rect.width - 10) + 'px';
     }
-    
+
     if (rect.bottom > winHeight) {
       menu.style.top = (winHeight - rect.height - 10) + 'px';
     }
-    
+
     // 添加全局点击事件，关闭菜单
     const clickHandler = (e) => {
       if (!menu.contains(e.target)) {
         this.close();
       }
     };
-    
+
     // 延迟添加点击事件，避免立即触发
     setTimeout(() => {
       document.addEventListener('click', clickHandler);
     }, 10);
-    
+
     this.activeMenu = {
       element: container,
       clickHandler
     };
-    
+
     console.log('[ContextMenu] 菜单已创建:', options);
     return this.activeMenu;
   },
-  
+
   close() {
     if (this.activeMenu) {
       document.removeEventListener('click', this.activeMenu.clickHandler);
@@ -133,6 +133,7 @@ createApp({
       showImg: false,
       showImgSrc: '',
       draggingImageIdx: null,
+      draggingNoteIdx: null,
       contextMenu: {
         show: false,
         x: 0,
@@ -148,7 +149,7 @@ createApp({
       }
     };
   },
-  
+
   computed: {
     backendUrl() {
       return this.backendType === 'public'
@@ -453,9 +454,10 @@ createApp({
       if (this.editingIdx !== null) {
         // 编辑已有便签
         const note = this.notes[this.editingIdx];
+        const editingIdx = this.editingIdx; // 保存当前索引的副本，供异步回调使用
 
         // 先在UI中更新便签，实现乐观更新
-        this.notes[this.editingIdx] = {
+        this.notes[editingIdx] = {
           id: note.id,
           text: this.inputText,
           x: this.inputPos.x,
@@ -481,7 +483,10 @@ createApp({
           })
           .then(data => {
             // API请求成功，可以更新ID（如果服务器生成了新ID）
-            this.notes[this.editingIdx].id = data.id || note.id;
+            // 使用保存的索引而不是this.editingIdx
+            if (this.notes[editingIdx]) {
+              this.notes[editingIdx].id = data.id || note.id;
+            }
           })
           .catch(error => {
             console.error('更新便签失败:', error);
@@ -504,7 +509,7 @@ createApp({
         // 添加到列表中以立即显示
         this.notes.push(newNote);
 
-        // 记住新笔记的索引位置
+        // 记住新笔记的索引位置和临时ID
         const noteIndex = this.notes.length - 1;
 
         fetch(this.backendUrl + '/api/notes', {
@@ -526,8 +531,10 @@ createApp({
           })
           .then(data => {
             // API请求成功，更新临时ID为服务器返回的真实ID
-            if (this.notes[noteIndex]) {
-              this.notes[noteIndex].id = data.id;
+            // 由于索引可能已经改变，查找并更新具有相同临时ID的笔记
+            const noteToUpdate = this.notes.find(note => note.id === tempId);
+            if (noteToUpdate) {
+              noteToUpdate.id = data.id;
             }
           })
           .catch(error => {
@@ -537,21 +544,21 @@ createApp({
             // this.notes = this.notes.filter(note => note.id !== tempId);
           });
       }
-      
+
       this.inputing = false;
       this.inputText = '';
       this.editingIdx = null;
     },
-    
+
     handleImageUpload(e) {
       const file = e.target.files[0];
       if (!file) return;
-      
+
       const formData = new FormData();
       formData.append('image', file);
       formData.append('x', 50); // 默认位置
       formData.append('y', 50);
-      
+
       fetch(this.backendUrl + '/api/images', {
         method: 'POST',
         body: formData
@@ -567,7 +574,7 @@ createApp({
           const imgUrl = data.img.startsWith('http')
             ? data.img
             : this.backendUrl + data.img;
-          
+
           const newImage = {
             id: data.id,
             type: 'image',
@@ -576,9 +583,9 @@ createApp({
             y: data.y || 50,
             thumb: null
           };
-          
+
           this.notes.push(newImage);
-          
+
           // 生成缩略图
           const idx = this.notes.length - 1;
           const img = new Image();
@@ -602,68 +609,89 @@ createApp({
           console.error('上传图片失败:', error);
           alert('上传失败，请重试。');
         });
-      
+
       // 清空input，允许重复上传同一文件
       e.target.value = '';
     },
-    
+
     // 实现图片拖拽功能
     handleImageDragStart(idx, e) {
       console.log('开始拖拽图片:', idx);
       this.draggingImageIdx = idx;
-      
+
       // 存储拖拽开始时的相对位置
       const img = e.target;
       const rect = img.getBoundingClientRect();
       const offsetX = e.clientX - rect.left;
       const offsetY = e.clientY - rect.top;
-      
+
       // 将相对位置存储在dataTransfer中
       e.dataTransfer.setData('text/plain', JSON.stringify({
         noteIdx: idx,
         offsetX: offsetX,
         offsetY: offsetY
       }));
-      
+
       // 设置拖拽效果
       e.dataTransfer.effectAllowed = 'move';
     },
-    
+
     handleImageDragEnd(idx, e) {
       console.log('结束拖拽图片:', idx);
       this.draggingImageIdx = null;
     },
-    
-    handleDropImage(e) {
+
+    handleNoteDrop(e) {
       e.preventDefault();
-      
-      // 1. 首先检查是否是拖拽本地文件（本地图片上传）
+
+      // 先尝试获取内部拖拽数据，确定是否为内部拖拽操作
+      let internalDragData = null;
+      try {
+        const dataStr = e.dataTransfer.getData('text/plain');
+        if (dataStr) {
+          internalDragData = JSON.parse(dataStr);
+        }
+      } catch (err) {
+        console.log('不是内部拖拽数据');
+      }
+
+      // 如果是内部拖拽，根据类型选择对应的处理函数
+      if (internalDragData && typeof internalDragData.noteIdx === 'number') {
+        // 判断是文字笔记还是图片笔记
+        if (internalDragData.isTextNote) {
+          return this.handleInternalTextNoteDrop(e, internalDragData);
+        } else {
+          return this.handleInternalImageDrop(e, internalDragData);
+        }
+      }
+
+      // 1. 处理拖拽本地文件（本地图片上传）
       if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
         console.log('检测到拖拽本地图片文件');
         const file = e.dataTransfer.files[0];
-        
+
         // 只处理图片文件
         if (!file.type.startsWith('image/')) {
           console.warn('拖拽的不是图片文件:', file.type);
           return;
         }
-        
+
         // 计算放置位置
         const noteArea = this.$refs.noteArea;
         const rect = noteArea.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
-        
+
         // 上传图片文件
         const formData = new FormData();
         formData.append('image', file);
         formData.append('x', x);
         formData.append('y', y);
-        
+
         // 支持两种API端点：/api/images 和 /api/upload
         const uploadUrl = this.backendUrl + '/api/images';
         console.log('上传图片到:', uploadUrl);
-        
+
         fetch(uploadUrl, {
           method: 'POST',
           body: formData
@@ -680,7 +708,7 @@ createApp({
             const imgUrl = data.img.startsWith('http')
               ? data.img
               : this.backendUrl + data.img;
-            
+
             const newImage = {
               id: data.id,
               type: 'image',
@@ -689,9 +717,9 @@ createApp({
               y: data.y || y,
               thumb: null
             };
-            
+
             this.notes.push(newImage);
-            
+
             // 生成缩略图
             const idx = this.notes.length - 1;
             const img = new Image();
@@ -732,12 +760,12 @@ createApp({
             // 尝试使用备选API
             const backupUrl = this.backendUrl + '/api/upload';
             console.log('尝试备选上传端点:', backupUrl);
-            
+
             const backupFormData = new FormData();
             backupFormData.append('file', file); // 使用不同的字段名
             backupFormData.append('x', x);
             backupFormData.append('y', y);
-            
+
             fetch(backupUrl, {
               method: 'POST',
               body: backupFormData
@@ -749,7 +777,7 @@ createApp({
                 const imgUrl = data.img.startsWith('http')
                   ? data.img
                   : this.backendUrl + data.img;
-                
+
                 const newImage = {
                   id: data.id,
                   type: 'image',
@@ -758,7 +786,7 @@ createApp({
                   y: data.y || y,
                   thumb: null
                 };
-                
+
                 this.notes.push(newImage);
                 // 同样生成缩略图
                 const idx = this.notes.length - 1;
@@ -783,77 +811,162 @@ createApp({
                 console.error('两种上传方式均失败:', err);
               });
           });
-          
+
         return;
       }
-      
-      // 2. 处理拖拽已有的图片便签（移动位置）
-      try {
-        // 尝试获取拖拽数据
-        const dataStr = e.dataTransfer.getData('text/plain');
-        if (!dataStr) {
-          console.warn('没有获取到拖拽数据');
-          return;
-        }
-        
-        const data = JSON.parse(dataStr);
-        const noteIdx = data.noteIdx;
-        const offsetX = data.offsetX;
-        const offsetY = data.offsetY;
-        
-        if (typeof noteIdx !== 'number' || !this.notes[noteIdx]) {
-          console.warn('找不到对应的便签:', noteIdx);
-          return;
-        }
-        
-        const noteArea = this.$refs.noteArea;
-        const rect = noteArea.getBoundingClientRect();
-        
-        // 计算新位置时考虑拖拽开始的偏移量
-        const x = e.clientX - rect.left - offsetX;
-        const y = e.clientY - rect.top - offsetY;
-        
-        // 更新笔记位置
-        this.notes[noteIdx].x = x;
-        this.notes[noteIdx].y = y;
-        
-        // 保存位置到服务器
-        const note = this.notes[noteIdx];
-        fetch(this.backendUrl + '/api/notes/' + note.id, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            x: x,
-            y: y
-          })
-        })
-        .then(response => {
-          if (!response.ok) {
-            return Promise.reject(`HTTP错误，状态: ${response.status}`);
-          }
-          return response.json();
-        })
-        .then(data => {
-          console.log('便签位置更新成功:', data);
-        })
-        .catch(error => {
-          console.error('更新位置失败:', error);
-        });
-      } catch (err) {
-        console.error('拖放处理失败:', err);
-      }
+
+      console.warn('未知的拖拽类型');
     },
-    
+
     hideDockMenu() {
       this.dockMenu.show = false;
     },
-    
+
     // 显示大图
     showImage(imgSrc) {
+      // 显示大图预览
       this.showImgSrc = imgSrc;
       this.showImg = true;
-    }
+
+      console.log('正在预览大图:', imgSrc);
+
+      // 预加载大图，确保加载完成后显示
+      const img = new Image();
+      img.onload = () => {
+        // 图片已加载完成，可以在这里添加额外处理
+        console.log('大图加载完成，尺寸:', img.width, 'x', img.height);
+      };
+      img.onerror = () => {
+        console.error('大图加载失败:', imgSrc);
+        // 失败时也显示错误提示
+        alert('图片加载失败，请检查网络或重试');
+        this.showImg = false;
+      };
+      img.src = imgSrc;
+    },
+
+    handleInternalImageDrop(e, data) {
+      console.log('处理内部图片拖拽');
+      const noteIdx = data.noteIdx;
+      const offsetX = data.offsetX;
+      const offsetY = data.offsetY;
+
+      if (typeof noteIdx !== 'number' || !this.notes[noteIdx]) {
+        console.warn('找不到对应的便签:', noteIdx);
+        return;
+      }
+
+      const noteArea = this.$refs.noteArea;
+      const rect = noteArea.getBoundingClientRect();
+
+      // 计算新位置时考虑拖拽开始的偏移量
+      const x = e.clientX - rect.left - offsetX;
+      const y = e.clientY - rect.top - offsetY;
+
+      // 更新笔记位置
+      this.notes[noteIdx].x = x;
+      this.notes[noteIdx].y = y;
+
+      // 保存位置到服务器
+      const note = this.notes[noteIdx];
+      fetch(this.backendUrl + '/api/notes/' + note.id, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          x: x,
+          y: y
+        })
+      })
+      .then(response => {
+        if (!response.ok) {
+          return Promise.reject(`HTTP错误，状态: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then(data => {
+        console.log('便签位置更新成功:', data);
+      })
+      .catch(error => {
+        console.error('更新位置失败:', error);
+      });
+    },
+
+    // 文字笔记拖拽功能
+    handleTextNoteDragStart(idx, e) {
+      console.log('开始拖拽文字笔记:', idx);
+      this.draggingNoteIdx = idx;
+
+      // 存储拖拽开始时的相对位置
+      const noteElement = e.target;
+      const rect = noteElement.getBoundingClientRect();
+      const offsetX = e.clientX - rect.left;
+      const offsetY = e.clientY - rect.top;
+
+      // 将相对位置存储在dataTransfer中
+      e.dataTransfer.setData('text/plain', JSON.stringify({
+        noteIdx: idx,
+        offsetX: offsetX,
+        offsetY: offsetY,
+        isTextNote: true // 标识这是文字笔记
+      }));
+
+      // 设置拖拽效果
+      e.dataTransfer.effectAllowed = 'move';
+    },
+
+    handleTextNoteDragEnd(idx, e) {
+      console.log('结束拖拽文字笔记:', idx);
+      this.draggingNoteIdx = null;
+    },
+
+    handleInternalTextNoteDrop(e, data) {
+      console.log('处理内部文字笔记拖拽');
+      const noteIdx = data.noteIdx;
+      const offsetX = data.offsetX;
+      const offsetY = data.offsetY;
+
+      if (typeof noteIdx !== 'number' || !this.notes[noteIdx]) {
+        console.warn('找不到对应的文字笔记:', noteIdx);
+        return;
+      }
+
+      const noteArea = this.$refs.noteArea;
+      const rect = noteArea.getBoundingClientRect();
+
+      // 计算新位置时考虑拖拽开始的偏移量
+      const x = e.clientX - rect.left - offsetX;
+      const y = e.clientY - rect.top - offsetY;
+
+      // 更新笔记位置
+      this.notes[noteIdx].x = x;
+      this.notes[noteIdx].y = y;
+
+      // 保存位置到服务器
+      const note = this.notes[noteIdx];
+      fetch(this.backendUrl + '/api/notes/' + note.id, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          x: x,
+          y: y
+        })
+      })
+      .then(response => {
+        if (!response.ok) {
+          return Promise.reject(`HTTP错误，状态: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then(data => {
+        console.log('文字笔记位置更新成功:', data);
+      })
+      .catch(error => {
+        console.error('更新位置失败:', error);
+      });
+    },
   }
 }).mount('#app');
