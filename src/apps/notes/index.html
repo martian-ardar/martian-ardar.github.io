@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>笔记墙</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app" class="full-height">
+    <div class="container full-height">
+      <div
+        class="note-area"
+          @click="handleAreaClick($event)"
+          @dragover.prevent
+          @drop="handleNoteDrop"
+          ref="noteArea"
+        >
+          <div
+            v-for="(item, idx) in notes"
+            :key="idx"
+          >
+            <div
+              v-if="item.type !== 'image'"
+              class="note-text"
+              :style="{left: item.x + 'px', top: item.y + 'px', visibility: (inputing && editingIdx === idx) ? 'hidden' : 'visible'}"
+              @click.stop="editNote(idx, $event)"
+              @contextmenu.prevent="showContextMenu(idx, $event)"
+              draggable="true"
+              @dragstart="handleTextNoteDragStart(idx, $event)"
+              @dragend="handleTextNoteDragEnd(idx, $event)"
+            >
+              {{ item.text }}
+            </div>
+            <img
+              v-else-if="item.type === 'image' && item.thumb"
+              class="note-image"
+              :src="item.thumb"
+              :style="{left: item.x + 'px', top: item.y + 'px'}"
+              @click.stop="showImage(item.img)"
+              @contextmenu.prevent="showContextMenu(idx, $event)"
+              alt="图片"
+              draggable="true"
+              @dragstart="handleImageDragStart(idx, $event)"
+              @dragend="handleImageDragEnd(idx, $event)"
+            />
+          </div>
+          <input
+            v-if="inputing"
+            ref="inputBox"
+            class="input-box"
+            :style="{left: inputPos.x + 'px', top: inputPos.y + 'px'}"
+            v-model="inputText"
+            @blur="saveInput"
+            @keyup.enter="saveInput"
+            placeholder="输入笔记内容"
+            title="笔记内容"
+          />
+          <!-- 图片上传按钮 -->
+          <input type="file" accept="image/*" @change="handleImageUpload" class="img-upload-input" title="上传图片" ref="imgInput">
+          <button @click="$refs.imgInput.click()" class="img-upload-button" title="点击上传图片">+</button>
+        </div>
+        <!-- 大图弹窗 -->
+        <div v-if="showImg" @click="showImg=false" class="img-popup">
+          <div class="img-popup-container">
+            <img :src="showImgSrc" :alt="'笔记图片'" title="点击关闭预览" @click.stop />
+            <button class="close-image-btn" @click="showImg=false">&times;</button>
+            <div class="img-popup-hint">点击空白区域关闭</div>
+          </div>
+        </div>
+        <!-- 右键菜单 -->
+        <div v-if="contextMenu.show" class="context-menu" :style="{left: contextMenu.x + 'px', top: contextMenu.y + 'px'}">
+          <div class="context-menu-item delete" @click="deleteNote">删除</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script src="notes.js"></script>
+</body>
+</html>
