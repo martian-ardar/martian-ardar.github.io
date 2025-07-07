@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#B919DE">
-  <title>记录本</title>
+  <title>云笔记的测试页</title>
   <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
   <link rel="stylesheet" href="src/main.css">
   <style>
@@ -30,7 +30,7 @@
         <iframe id="notesIframe" class="note-app-iframe" src="src/apps/notes/index.html" frameborder="0" title="笔记应用" allow="autoplay; fullscreen"></iframe>
       </div>
     </div>
-    
+
     <!-- Dock栏 -->
     <div class="mac-dock">
       <div class="dock-app" :class="{active: showNoteApp}" @click="toggleNoteApp" @contextmenu="showDockMenu">
@@ -39,13 +39,16 @@
       </div>
       <!-- 可以在这里添加更多dock应用图标 -->
     </div>
-    
+
     <!-- 调试信息 -->
     <div style="position: fixed; left: 10px; top: 10px; background: rgba(255,255,255,0.7); padding: 5px; border-radius: 5px; font-size: 12px; display:none;">
       右键点击状态: <span id="rightClickStatus">未触发</span>
     </div>
   </div>
-  
+
   <script src="src/main.js"></script>
+  <div style="position: fixed; left: 5px; bottom: 10px; text-align: left; background: rgba(255,255,255,0.7); font-size: 13px; z-index: 9999; border-radius: 5px; padding: 2px 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+    <a href="https://beian.miit.gov.cn/" target="_blank" style="color: #333; text-decoration: none;">浙ICP备2025183021号-1</a>
+  </div>
 </body>
 </html>
