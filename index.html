@@ -22,10 +22,7 @@
     <!-- 登录按钮和登录表单 -->
     <div class="login-container" :class="{'below-app': showNoteApp}">
       <button v-if="!isLoggedIn" @click="showLoginForm = true" class="login-button">登录</button>
-      <div v-else class="login-user-info">
-        <span>{{ username }}</span>
-        <button @click="logout" class="logout-button">退出</button>
-      </div>
+      <button v-else @click="logout" class="login-button">{{ username }} | 退出</button>
     </div>
 
     <!-- 登录表单模态窗口 -->
