@@ -1,6 +1,6 @@
 body {
   font-family: "微软雅黑", Arial, sans-serif;
-  background: #f5f6fa url('../static/background.jpg') no-repeat center center fixed;
+  background: #f5f6fa url('../static/img/background.jpg') no-repeat center center fixed;
   background-size: cover;
   margin: 0;
   padding: 0;
@@ -406,6 +406,13 @@ body {
 .beian-link {
   color: #333;
   text-decoration: none;
+}
+
+/* 备案图片样式 */
+.beian-img {
+  height: 20px;
+  vertical-align: middle;
+  margin: 0 5px;
 }
 
 @media (max-width: 600px) {
