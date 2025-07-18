@@ -4,7 +4,39 @@ body {
   background-size: cover;
   margin: 0;
   padding: 0;
-  height: 100vh; /* 确保body占满整个视口高度 */
+  height.note-app-modal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* 聊天应用模态框 */
+.chat-app-modal {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 2001;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.3s, transform 0.3s;
+}
+
+.chat-app-modal.hidden {
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.3s, transform 0.3s;
+}
+
+.chat-app-modal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.note-app-container {h; /* 确保body占满整个视口高度 */
   width: 100vw; /* 确保body占满整个视口宽度 */
   overflow: hidden; /* 防止出现滚动条 */
 }
@@ -162,28 +194,50 @@ body {
 /* 弹窗遮罩 */
 .modal-mask {
   position: fixed;
-  left: 0;
   top: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0, 0, 0, 0.4);
-  z-index: 2000;
-  animation: fadeIn 0.2s;
-  display: none; /* 默认隐藏 */
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1500;
+  transition: opacity 0.3s ease;
+}
+
+.modal-mask.hidden {
+  opacity: 0;
+}
+
+.modal-mask.visible {
+  opacity: 1;
 }
 
 /* 应用弹窗 */
 .note-app-modal {
   position: fixed;
-  left: 0;
-  top: 0;
-  width: 100vw;
-  height: 100vh;
-  display: none; /* 默认隐藏 */
-  align-items: center;
-  justify-content: center;
-  z-index: 2001;
-  animation: fadeIn 0.2s;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  width: 90%;
+  height: 85%;
+  max-width: 1200px;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 5px 25px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+}
+
+.note-app-modal.hidden {
+  opacity: 0;
+  transform: translate(-50%, -45%);
+}
+
+.note-app-modal.visible {
+  opacity: 1;
+  transform: translate(-50%, -50%);
 }
 
 .note-app-container {

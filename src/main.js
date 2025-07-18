@@ -218,6 +218,7 @@ createApp({
     return {
       backendType: localStorage.getItem('backendType') || 'internal', // 从本地存储获取，默认为internal
       showNoteApp: false, // 默认不显示笔记应用
+      showChatApp: false, // 默认不显示聊天应用
       isLoggedIn: loginStatus.isLoggedIn,
       username: loginStatus.username,
       showLoginForm: false,
@@ -238,6 +239,18 @@ createApp({
     if (modalMask) {
       modalMask.classList.add('hidden');
       modalMask.style.display = 'none';
+    }
+    
+    // 初始化聊天应用窗口关闭状态
+    const chatAppModal = document.getElementById('chatAppModal');
+    const chatModalMask = document.getElementById('chatModalMask');
+    if (chatAppModal) {
+      chatAppModal.classList.add('hidden');
+      chatAppModal.style.display = 'none';
+    }
+    if (chatModalMask) {
+      chatModalMask.classList.add('hidden');
+      chatModalMask.style.display = 'none';
     }
     
     // 注册全局右键菜单处理
@@ -427,6 +440,72 @@ createApp({
           }
         ]
       });
-    }
+    },
+    
+    // 聊天应用相关方法
+    toggleChatApp() {
+      // 如果笔记应用正在显示，先关闭
+      if (this.showNoteApp) {
+        this.closeNoteApp();
+      }
+      
+      // 切换聊天应用的显示状态
+      this.showChatApp = !this.showChatApp;
+      
+      // 获取DOM元素
+      const chatAppModal = document.getElementById('chatAppModal');
+      const chatModalMask = document.getElementById('chatModalMask');
+      const chatIframe = document.getElementById('chatIframe');
+      
+      if (this.showChatApp) {
+        // 显示聊天应用
+        chatAppModal.style.display = 'flex';
+        chatModalMask.style.display = 'block';
+        
+        // 设置iframe的src，确保使用相对于当前页面的相对路径
+        if (!chatIframe.src || chatIframe.src === 'about:blank' || chatIframe.src === window.location.href) {
+          // 获取当前页面的URL路径
+          const currentPath = window.location.pathname;
+          const pathPrefix = currentPath.endsWith('/') ? '' : currentPath.substring(0, currentPath.lastIndexOf('/') + 1);
+          
+          // 构建聊天应用的相对路径
+          const chatPath = pathPrefix + 'src/apps/chat/index.html';
+          
+          // 设置iframe src
+          chatIframe.src = chatPath;
+          console.log('加载聊天应用:', chatPath);
+        }
+        
+        // 添加动画类
+        nextTick(() => {
+          chatAppModal.classList.remove('hidden');
+          chatModalMask.classList.remove('hidden');
+          chatAppModal.classList.add('visible');
+          chatModalMask.classList.add('visible');
+        });
+      } else {
+        // 隐藏聊天应用
+        this.closeChatApp();
+      }
+    },
+    
+    closeChatApp() {
+      this.showChatApp = false;
+      
+      const chatAppModal = document.getElementById('chatAppModal');
+      const chatModalMask = document.getElementById('chatModalMask');
+      
+      // 添加隐藏动画
+      chatAppModal.classList.add('hidden');
+      chatAppModal.classList.remove('visible');
+      chatModalMask.classList.add('hidden');
+      chatModalMask.classList.remove('visible');
+      
+      // 动画结束后隐藏元素
+      setTimeout(() => {
+        chatAppModal.style.display = 'none';
+        chatModalMask.style.display = 'none';
+      }, 300); // 与CSS动画持续时间一致
+    },
   }
 }).mount('#app');

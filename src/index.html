@@ -21,11 +21,27 @@
       </div>
     </div>
     
+    <!-- 聊天应用弹窗 -->
+    <div class="modal-mask" id="chatModalMask" @click="closeChatApp" style="display:none;"></div>
+    <div class="note-app-modal" id="chatAppModal" style="display:none;">
+      <div class="note-app-container">
+        <div class="note-app-header">
+          <h3>聊天窗口</h3>
+          <button class="close-button" @click="closeChatApp">&times;</button>
+        </div>
+        <iframe id="chatIframe" class="note-app-iframe" src="" frameborder="0" title="聊天应用" allow="autoplay; fullscreen"></iframe>
+      </div>
+    </div>
+    
     <!-- Dock栏 -->
     <div class="mac-dock">
       <div class="dock-app" :class="{active: showNoteApp}" @click="toggleNoteApp" @contextmenu="showDockMenu">
         <img src="https://img.icons8.com/fluency/48/notepad.png" alt="记笔记" />
         <span class="dock-app-label">{{ showNoteApp ? '点击关闭' : '记笔记' }}</span>
+      </div>
+      <div class="dock-app" :class="{active: showChatApp}" @click="toggleChatApp">
+        <img src="https://img.icons8.com/fluency/48/chat.png" alt="聊天" />
+        <span class="dock-app-label">{{ showChatApp ? '点击关闭' : '聊天' }}</span>
       </div>
       <!-- 可以在这里添加更多dock应用图标 -->
     </div>
