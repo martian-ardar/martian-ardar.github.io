@@ -146,7 +146,10 @@ createApp({
         show: false,
         x: 0,
         y: 0
-      }
+      },
+      // 添加登录状态相关变量
+      isLoggedIn: false,
+      username: ''
     };
   },
 
@@ -171,41 +174,85 @@ createApp({
   },
 
   mounted() {
-    // 点击页面其他地方关闭右键菜单
-    document.addEventListener('click', this.hideContextMenu);
+    // 初始化操作
+    this.init();
 
-    // 注册全局右键菜单处理
-    document.addEventListener('contextmenu', (e) => {
-      // 检查是否在 dock 区域
-      const dock = document.querySelector('.mac-dock');
-      if (dock && dock.contains(e.target)) {
-        // 不处理dock区域的右键菜单
-        return;
-      }
+    // 添加消息监听器，用于接收父窗口的登录状态更新
+    window.addEventListener('message', this.handleParentMessage);
 
-      // 关闭菜单
-      ContextMenuManager.close();
-    });
-
-    // 监听来自父窗口的消息，用于环境类型更新
-    window.addEventListener('message', (event) => {
-      if (event.data && event.data.type === 'updateBackendType') {
-        console.log('收到来自父窗口的环境更新:', event.data.backendType);
-
-        // 更新环境类型并刷新数据
-        if (this.backendType !== event.data.backendType) {
-          this.setBackendType(event.data.backendType);
-        }
-      }
-    });
+    // 检查当前登录状态
+    this.checkLoginStatus();
   },
 
-  unmounted() {
-    document.removeEventListener('click', this.hideContextMenu);
-    ContextMenuManager.close();
+  beforeUnmount() {
+    // 移除消息监听器
+    window.removeEventListener('message', this.handleParentMessage);
   },
 
   methods: {
+    // 处理来自父窗口的消息
+    handleParentMessage(event) {
+      const message = event.data;
+      console.log('[Notes] 收到父窗口消息:', message);
+
+      if (message.type === 'updateBackendType') {
+        this.backendType = message.backendType;
+        console.log('[Notes] 已更新后端环境类型:', this.backendType);
+      } else if (message.type === 'updateLoginStatus') {
+        this.isLoggedIn = message.isLoggedIn;
+        this.username = message.username;
+        console.log('[Notes] 已更新登录状态:', this.isLoggedIn, this.username);
+      }
+    },
+
+    // 检查登录状态
+    checkLoginStatus() {
+      // 从localStorage检查登录状态
+      const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+      const username = localStorage.getItem('username');
+
+      this.isLoggedIn = isLoggedIn;
+      this.username = username;
+
+      console.log('[Notes] 检查登录状态:', this.isLoggedIn, this.username);
+    },
+
+    // 初始化
+    init() {
+      // 点击页面其他地方关闭右键菜单
+      document.addEventListener('click', this.hideContextMenu);
+
+      // 注册全局右键菜单处理
+      document.addEventListener('contextmenu', (e) => {
+        // 检查是否在 dock 区域
+        const dock = document.querySelector('.mac-dock');
+        if (dock && dock.contains(e.target)) {
+          // 不处理dock区域的右键菜单
+          return;
+        }
+
+        // 关闭菜单
+        ContextMenuManager.close();
+      });
+
+      // 监听来自父窗口的消息，用于环境类型更新
+      window.addEventListener('message', (event) => {
+        if (event.data && event.data.type === 'updateBackendType') {
+          console.log('收到来自父窗口的环境更新:', event.data.backendType);
+
+          // 更新环境类型并刷新数据
+          if (this.backendType !== event.data.backendType) {
+            this.setBackendType(event.data.backendType);
+          }
+        }
+      });
+    },
+
+    unmounted() {
+      document.removeEventListener('click', this.hideContextMenu);
+      ContextMenuManager.close();
+    },
+
     fetchNotes() {
       fetch(this.backendUrl + '/api/notes')
         .then(res => {
@@ -286,6 +333,12 @@ createApp({
     },
 
     deleteNote() {
+      // 如果没有登录，则不允许删除笔记
+      if (!this.isLoggedIn) {
+        console.log('[Notes] 未登录，不能删除笔记');
+        return;
+      }
+
       const idx = this.contextMenu.noteIdx;
       if (idx !== null && this.notes[idx]) {
         const note = this.notes[idx];
@@ -407,25 +460,47 @@ createApp({
     },
 
     handleAreaClick(e) {
-      if (this.inputing) return;
-      const noteArea = e.currentTarget;
-      const rect = noteArea.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
+      // 关闭已打开的右键菜单
+      this.contextMenu.show = false;
 
-      this.inputPos = { x, y };
-      this.inputing = true;
-      this.editingIdx = null;
+      // 如果没有登录，则不允许添加笔记
+      if (!this.isLoggedIn) {
+        console.log('[Notes] 未登录，不能添加笔记');
+        return;
+      }
 
-      this.$nextTick(() => {
-        const inputEl = this.$refs.inputBox;
-        if (inputEl) {
-          inputEl.focus();
-        }
-      });
+      // 如果当前没有输入框激活，则创建新的输入框
+      if (!this.inputing) {
+        this.inputing = true;
+        this.editingIdx = null;
+        this.inputText = '';
+
+        // 计算点击的位置
+        const noteArea = this.$refs.noteArea;
+        if (!noteArea) return;
+
+        const rect = noteArea.getBoundingClientRect();
+        this.inputPos = {
+          x: e.clientX - rect.left,
+          y: e.clientY - rect.top
+        };
+
+        // 确保在下一个渲染循环后再聚焦输入框
+        this.$nextTick(() => {
+          if (this.$refs.inputBox) {
+            this.$refs.inputBox.focus();
+          }
+        });
+      }
     },
 
     editNote(idx, e) {
+      // 如果没有登录，则不允许编辑笔记
+      if (!this.isLoggedIn) {
+        console.log('[Notes] 未登录，不能编辑笔记');
+        return;
+      }
+
       const note = this.notes[idx];
       if (!note || note.type === 'image') return;
 
@@ -551,6 +626,12 @@ createApp({
     },
 
     handleImageUpload(e) {
+      // 如果没有登录，则不允许上传图片
+      if (!this.isLoggedIn) {
+        console.log('[Notes] 未登录，不能上传图片');
+        return;
+      }
+
       const file = e.target.files[0];
       if (!file) return;
 

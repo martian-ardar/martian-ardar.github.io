@@ -119,12 +119,112 @@ const ContextMenuManager = {
   }
 };
 
+// 添加登录凭证验证
+const authManager = {
+  // 验证凭证 - 通过API调用
+  async validateCredentials(username, password) {
+    // 获取当前环境设置
+    const backendType = localStorage.getItem('backendType') || 'internal';
+    
+    // 尝试使用当前环境
+    const result = await this.tryLogin(username, password, backendType);
+    
+    // 如果当前环境失败，尝试另一个环境
+    if (!result.success) {
+      const alternativeType = backendType === 'public' ? 'internal' : 'public';
+      console.log(`当前环境(${backendType})登录失败，尝试使用${alternativeType}环境...`);
+      return await this.tryLogin(username, password, alternativeType);
+    }
+    
+    return result;
+  },
+  
+  // 尝试使用指定环境进行登录
+  async tryLogin(username, password, backendType) {
+    try {
+      const apiBaseUrl = backendType === 'public'
+        ? 'https://47.97.60.69' // 公网环境
+        : 'https://SERVER_IP'; // 内网环境
+      
+      // 发送请求到后端
+      console.log(`正在连接到: ${apiBaseUrl}/api/auth/login`); // 添加日志
+      const response = await fetch(`${apiBaseUrl}/api/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username, password }),
+      });
+      
+      // 检查响应状态
+      if (!response.ok) {
+        console.error(`服务器返回错误状态码: ${response.status}`);
+        // 尝试获取错误文本
+        const errorText = await response.text();
+        console.log('服务器响应内容:', errorText);
+        return { success: false, message: `服务器错误: ${response.status}`, backendType };
+      }
+      
+      const data = await response.json();
+      if (data.success) {
+        // 如果登录成功，记住这个成功的环境
+        localStorage.setItem('backendType', backendType);
+      }
+      return { 
+        success: data.success,
+        message: data.message,
+        backendType
+      };
+    } catch (error) {
+      console.error(`在${backendType}环境下登录验证失败:`, error);
+      return { success: false, message: '网络错误，请稍后再试', backendType };
+    }
+  },
+  
+  // 登录 - 异步方法
+  async login(username, password) {
+    const result = await this.validateCredentials(username, password);
+    if (result.success) {
+      localStorage.setItem('isLoggedIn', 'true');
+      localStorage.setItem('username', username);
+      // 在成功登录后，更新应用的后端环境设置
+      if (result.backendType) {
+        localStorage.setItem('backendType', result.backendType);
+      }
+      return true;
+    }
+    return false;
+  },
+  
+  // 退出
+  logout() {
+    localStorage.removeItem('isLoggedIn');
+    localStorage.removeItem('username');
+  },
+  
+  // 检查登录状态
+  checkLoginStatus() {
+    return {
+      isLoggedIn: localStorage.getItem('isLoggedIn') === 'true',
+      username: localStorage.getItem('username')
+    };
+  }
+};
+
 // 主页Vue应用
 createApp({
   data() {
+    const loginStatus = authManager.checkLoginStatus();
     return {
-      backendType: localStorage.getItem('backendType') || 'public', // 从本地存储获取，默认Public
-      showNoteApp: false // 默认不显示笔记应用
+      backendType: localStorage.getItem('backendType') || 'internal', // 从本地存储获取，默认为internal
+      showNoteApp: false, // 默认不显示笔记应用
+      showChatApp: false, // 默认不显示聊天应用
+      isLoggedIn: loginStatus.isLoggedIn,
+      username: loginStatus.username,
+      showLoginForm: false,
+      loginUsername: '',
+      loginPassword: '',
+      loginError: ''
     };
   },
   
@@ -132,8 +232,26 @@ createApp({
     // 初始化时确保应用窗口是关闭的
     const noteAppModal = document.getElementById('noteAppModal');
     const modalMask = document.getElementById('modalMask');
-    if (noteAppModal) noteAppModal.style.display = 'none';
-    if (modalMask) modalMask.style.display = 'none';
+    if (noteAppModal) {
+      noteAppModal.classList.add('hidden');
+      noteAppModal.style.display = 'none';
+    }
+    if (modalMask) {
+      modalMask.classList.add('hidden');
+      modalMask.style.display = 'none';
+    }
+    
+    // 初始化聊天应用窗口关闭状态
+    const chatAppModal = document.getElementById('chatAppModal');
+    const chatModalMask = document.getElementById('chatModalMask');
+    if (chatAppModal) {
+      chatAppModal.classList.add('hidden');
+      chatAppModal.style.display = 'none';
+    }
+    if (chatModalMask) {
+      chatModalMask.classList.add('hidden');
+      chatModalMask.style.display = 'none';
+    }
     
     // 注册全局右键菜单处理
     document.addEventListener('contextmenu', (e) => {
@@ -157,6 +275,59 @@ createApp({
   },
   
   methods: {
+    // 登录方法 - 异步
+    async login() {
+      if (!this.loginUsername || !this.loginPassword) {
+        this.loginError = '请输入用户名和密码';
+        return;
+      }
+      
+      // 显示加载状态
+      this.loginError = '登录中...';
+      
+      try {
+        const success = await authManager.login(this.loginUsername, this.loginPassword);
+        if (success) {
+          this.isLoggedIn = true;
+          this.username = this.loginUsername;
+          this.showLoginForm = false;
+          this.loginError = '';
+          this.loginUsername = '';
+          this.loginPassword = '';
+          
+          // 通知iframe内的笔记应用更新登录状态
+          this.notifyLoginStatusToNotes();
+        } else {
+          this.loginError = '用户名或密码错误';
+        }
+      } catch (error) {
+        console.error('登录过程发生错误:', error);
+        this.loginError = '登录失败，请稍后再试';
+      }
+    },
+    
+    // 退出登录
+    logout() {
+      authManager.logout();
+      this.isLoggedIn = false;
+      this.username = '';
+      
+      // 通知iframe内的笔记应用更新登录状态
+      this.notifyLoginStatusToNotes();
+    },
+    
+    // 通知笔记应用登录状态
+    notifyLoginStatusToNotes() {
+      const iframe = document.getElementById('notesIframe');
+      if (iframe && iframe.contentWindow) {
+        iframe.contentWindow.postMessage({
+          type: 'updateLoginStatus',
+          isLoggedIn: this.isLoggedIn,
+          username: this.username
+        }, '*');
+      }
+    },
+    
     // 切换笔记应用状态（打开或关闭）
     toggleNoteApp() {
       // 如果应用已经打开，则关闭它
@@ -171,16 +342,27 @@ createApp({
       // 显示应用窗口
       const noteAppModal = document.getElementById('noteAppModal');
       const modalMask = document.getElementById('modalMask');
-      if (noteAppModal) noteAppModal.style.display = 'flex';
-      if (modalMask) modalMask.style.display = 'block';
+      if (noteAppModal) {
+        noteAppModal.classList.remove('hidden');
+        noteAppModal.style.display = 'flex';
+      }
+      if (modalMask) {
+        modalMask.classList.remove('hidden');
+        modalMask.style.display = 'block';
+      }
       
       // 加载笔记应用的内容到iframe
       const iframe = document.getElementById('notesIframe');
       if (iframe) {
         // 如果iframe还未加载或需要重新加载
         if (!iframe.getAttribute('src') || iframe.getAttribute('src') === '') {
-          iframe.setAttribute('src', 'apps/notes/index.html');
+          iframe.setAttribute('src', 'src/apps/notes/index.html');
         }
+        
+        // 当iframe加载完成后，发送登录状态信息
+        iframe.onload = () => {
+          this.notifyLoginStatusToNotes();
+        };
       } else {
         console.error('找不到笔记应用iframe元素');
       }
@@ -193,8 +375,14 @@ createApp({
       // 隐藏应用窗口
       const noteAppModal = document.getElementById('noteAppModal');
       const modalMask = document.getElementById('modalMask');
-      if (noteAppModal) noteAppModal.style.display = 'none';
-      if (modalMask) modalMask.style.display = 'none';
+      if (noteAppModal) {
+        noteAppModal.classList.add('hidden');
+        noteAppModal.style.display = 'none';
+      }
+      if (modalMask) {
+        modalMask.classList.add('hidden');
+        modalMask.style.display = 'none';
+      }
     },
     
     // 显示Dock菜单
@@ -252,6 +440,72 @@ createApp({
           }
         ]
       });
-    }
+    },
+    
+    // 聊天应用相关方法
+    toggleChatApp() {
+      // 如果笔记应用正在显示，先关闭
+      if (this.showNoteApp) {
+        this.closeNoteApp();
+      }
+      
+      // 切换聊天应用的显示状态
+      this.showChatApp = !this.showChatApp;
+      
+      // 获取DOM元素
+      const chatAppModal = document.getElementById('chatAppModal');
+      const chatModalMask = document.getElementById('chatModalMask');
+      const chatIframe = document.getElementById('chatIframe');
+      
+      if (this.showChatApp) {
+        // 显示聊天应用
+        chatAppModal.style.display = 'flex';
+        chatModalMask.style.display = 'block';
+        
+        // 设置iframe的src，确保使用相对于当前页面的相对路径
+        if (!chatIframe.src || chatIframe.src === 'about:blank' || chatIframe.src === window.location.href) {
+          // 获取当前页面的URL路径
+          const currentPath = window.location.pathname;
+          const pathPrefix = currentPath.endsWith('/') ? '' : currentPath.substring(0, currentPath.lastIndexOf('/') + 1);
+          
+          // 构建聊天应用的相对路径
+          const chatPath = pathPrefix + 'src/apps/chat/index.html';
+          
+          // 设置iframe src
+          chatIframe.src = chatPath;
+          console.log('加载聊天应用:', chatPath);
+        }
+        
+        // 添加动画类
+        nextTick(() => {
+          chatAppModal.classList.remove('hidden');
+          chatModalMask.classList.remove('hidden');
+          chatAppModal.classList.add('visible');
+          chatModalMask.classList.add('visible');
+        });
+      } else {
+        // 隐藏聊天应用
+        this.closeChatApp();
+      }
+    },
+    
+    closeChatApp() {
+      this.showChatApp = false;
+      
+      const chatAppModal = document.getElementById('chatAppModal');
+      const chatModalMask = document.getElementById('chatModalMask');
+      
+      // 添加隐藏动画
+      chatAppModal.classList.add('hidden');
+      chatAppModal.classList.remove('visible');
+      chatModalMask.classList.add('hidden');
+      chatModalMask.classList.remove('visible');
+      
+      // 动画结束后隐藏元素
+      setTimeout(() => {
+        chatAppModal.style.display = 'none';
+        chatModalMask.style.display = 'none';
+      }, 300); // 与CSS动画持续时间一致
+    },
   }
 }).mount('#app');

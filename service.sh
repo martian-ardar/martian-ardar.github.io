@@ -1,7 +1,8 @@
 #!/bin/bash
 
-SCRIPT_NAME=$(basename $0)
+cd $(dirname $0)
 
+SCRIPT_NAME=$(basename $0)
 device=$(route|grep default|awk '{print$8}'|uniq)
 info=$(ip addr show $device)
 local_ip=$(echo $info|sed "s/.*\ inet\ \(.*\)\/.* brd.*\ .*/\1/")

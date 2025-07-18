@@ -10,6 +10,15 @@
 <body>
   <div id="app" class="full-height">
     <div class="container full-height">
+      <!-- 未登录提示 -->
+      <div v-if="!isLoggedIn" class="login-required-overlay">
+        <div class="login-required-message">
+          <div class="lock-icon">🔒</div>
+          <h2>需要登录</h2>
+          <p>您需要登录后才能添加或编辑笔记内容</p>
+        </div>
+      </div>
+
       <div
         class="note-area"
           @click="handleAreaClick($event)"
@@ -47,7 +56,7 @@
             />
           </div>
           <input
-            v-if="inputing"
+            v-if="inputing && isLoggedIn"
             ref="inputBox"
             class="input-box"
             :style="{left: inputPos.x + 'px', top: inputPos.y + 'px'}"
@@ -59,7 +68,7 @@
           />
           <!-- 图片上传按钮 -->
           <input type="file" accept="image/*" @change="handleImageUpload" class="img-upload-input" title="上传图片" ref="imgInput">
-          <button @click="$refs.imgInput.click()" class="img-upload-button" title="点击上传图片">+</button>
+          <button v-if="isLoggedIn" @click="$refs.imgInput.click()" class="img-upload-button" title="点击上传图片">+</button>
         </div>
         <!-- 大图弹窗 -->
         <div v-if="showImg" @click="showImg=false" class="img-popup">
@@ -70,7 +79,7 @@
           </div>
         </div>
         <!-- 右键菜单 -->
-        <div v-if="contextMenu.show" class="context-menu" :style="{left: contextMenu.x + 'px', top: contextMenu.y + 'px'}">
+        <div v-if="contextMenu.show && isLoggedIn" class="context-menu" :style="{left: contextMenu.x + 'px', top: contextMenu.y + 'px'}">
           <div class="context-menu-item delete" @click="deleteNote">删除</div>
         </div>
       </div>

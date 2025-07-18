@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#B919DE">
+  <title>云笔记的测试页</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <link rel="stylesheet" href="src/main.css">
+  <style>
+    body {
+      background-image: url('static/img/background.jpg');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <!-- 登录按钮和登录表单 -->
+    <div class="login-container" :class="{'below-app': showNoteApp}">
+      <button v-if="!isLoggedIn" @click="showLoginForm = true" class="login-button">登录</button>
+      <button v-else @click="logout" class="login-button">{{ username }} | 退出</button>
+    </div>
+
+    <!-- 登录表单模态窗口 -->
+    <div v-if="showLoginForm" class="login-modal">
+      <div class="login-form">
+        <h3>登录</h3>
+        <div v-if="loginError" class="login-error">{{ loginError }}</div>
+        <div class="form-group">
+          <label for="username">用户名</label>
+          <input type="text" id="username" v-model="loginUsername" placeholder="输入用户名">
+        </div>
+        <div class="form-group">
+          <label for="password">密码</label>
+          <input type="password" id="password" v-model="loginPassword" placeholder="输入密码">
+        </div>
+        <div class="form-actions">
+          <button @click="login" class="login-submit-button">登录</button>
+          <button @click="showLoginForm = false" class="login-cancel-button">取消</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 笔记应用弹窗 - 使用style控制显示隐藏，而不是v-if -->
+    <div class="modal-mask hidden" id="modalMask" @click="closeNoteApp"></div>
+    <div class="note-app-modal hidden" id="noteAppModal">
+      <div class="note-app-container">
+        <div class="note-app-header">
+          <h3>笔记墙</h3>
+          <button class="close-button" @click="closeNoteApp">&times;</button>
+        </div>
+        <iframe id="notesIframe" class="note-app-iframe" src="src/apps/notes/index.html" frameborder="0" title="笔记应用" allow="autoplay; fullscreen"></iframe>
+      </div>
+    </div>
+    
+    <!-- 聊天应用弹窗 -->
+    <div class="modal-mask hidden" id="chatModalMask" @click="closeChatApp"></div>
+    <div class="chat-app-modal hidden" id="chatAppModal">
+      <div class="note-app-container">
+        <div class="note-app-header">
+          <h3>聊天</h3>
+          <button class="close-button" @click="closeChatApp">&times;</button>
+        </div>
+        <iframe id="chatIframe" class="note-app-iframe" src="" frameborder="0" title="聊天应用" allow="autoplay; fullscreen"></iframe>
+      </div>
+    </div>
+
+    <!-- Dock栏 -->
+    <div class="mac-dock">
+      <div class="dock-app" :class="{active: showNoteApp}" @click="toggleNoteApp" @contextmenu="showDockMenu">
+        <img src="https://img.icons8.com/fluency/48/notepad.png" alt="记笔记" />
+        <span class="dock-app-label">{{ showNoteApp ? '点击关闭' : '记笔记' }}</span>
+      </div>
+      <div class="dock-app" :class="{active: showChatApp}" @click="toggleChatApp">
+        <img src="https://img.icons8.com/fluency/48/chat.png" alt="聊天" />
+        <span class="dock-app-label">{{ showChatApp ? '点击关闭' : '聊天' }}</span>
+      </div>
+      <!-- 可以在这里添加更多dock应用图标 -->
+    </div>
+
+    <!-- 调试信息 -->
+    <div class="debug-info hidden">
+      右键点击状态: <span id="rightClickStatus">未触发</span>
+    </div>
+  </div>
+
+  <script src="src/main.js"></script>
+  <div class="beian-container">
+    <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer" class="beian-link">浙ICP备2025183021号-1</a> <img src="static/img/hui.png" class="beian-img" alt="备案图标"/><a href="https://beian.mps.gov.cn/#/query/webSearch?code=33010802013958" rel="noopener noreferrer" target="_blank">浙公网安备33010802013958号</a>
+  </div>
+</body>
+</html>
