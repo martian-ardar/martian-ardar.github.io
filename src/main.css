@@ -12,31 +12,37 @@ body {
 /* 聊天应用模态框 */
 .chat-app-modal {
   position: fixed;
-  left: 0;
-  top: 0;
-  width: 100vw;
-  height: 100vh;
+  top: 45%; /* 向上偏移，确保不会覆盖任务栏 */
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 90%;
+  height: 75%; /* 进一步减少高度，确保不会盖住任务栏 */
+  max-width: 1200px;
   display: none;
-  align-items: center;
-  justify-content: center;
-  z-index: 2001;
+  flex-direction: column;
+  box-sizing: border-box;
+  z-index: 3500; /* 确保高于登录按钮但低于任务栏 */
   opacity: 0;
-  transform: translateY(10px);
-  transition: opacity 0.3s, transform 0.3s;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 5px 25px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+  max-height: calc(100vh - 80px); /* 确保窗口底部和任务栏之间有足够空间 */
 }
 
 .chat-app-modal.hidden {
   opacity: 0;
-  transform: translateY(10px);
+  transform: translate(-50%, -45%);
   transition: opacity 0.3s, transform 0.3s;
 }
 
 .chat-app-modal.visible {
   opacity: 1;
-  transform: translateY(0);
+  transform: translate(-50%, -50%);
 }
 
-.note-app-container {h; /* 确保body占满整个视口高度 */
+.note-app-container {
   width: 100vw; /* 确保body占满整个视口宽度 */
   overflow: hidden; /* 防止出现滚动条 */
 }
@@ -52,6 +58,7 @@ body {
 
 .login-container.below-app {
   z-index: 1000;
+  pointer-events: none; /* 当应用打开时，禁用登录按钮的交互 */
 }
 
 .login-button {
@@ -191,6 +198,16 @@ body {
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* 应用区域 - 留出底部空间给任务栏 */
+.app-area {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: calc(100% - 60px); /* 为任务栏预留空间 */
+  overflow: hidden;
+}
+
 /* 弹窗遮罩 */
 .modal-mask {
   position: fixed;
@@ -199,8 +216,9 @@ body {
   width: 100%;
   height: 100%;
   background: rgba(0, 0, 0, 0.5);
-  z-index: 1500;
+  z-index: 3400; /* 确保在应用窗口下方，但高于其他元素且低于任务栏 */
   transition: opacity 0.3s ease;
+  pointer-events: auto;
 }
 
 .modal-mask.hidden {
@@ -214,20 +232,22 @@ body {
 /* 应用弹窗 */
 .note-app-modal {
   position: fixed;
-  top: 50%;
+  top: 45%; /* 向上偏移，确保不会覆盖任务栏 */
   left: 50%;
   transform: translate(-50%, -50%);
-  z-index: 2000;
+  z-index: 3500; /* 确保高于登录按钮但低于任务栏 */
   display: flex;
   flex-direction: column;
   width: 90%;
-  height: 85%;
+  height: 75%; /* 进一步减少高度，确保不会盖住任务栏 */
   max-width: 1200px;
   background: white;
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 5px 25px rgba(0, 0, 0, 0.2);
   transition: all 0.3s ease;
+  box-sizing: border-box;
+  max-height: calc(100vh - 80px); /* 确保窗口底部和任务栏之间有足够空间 */
 }
 
 .note-app-modal.hidden {
@@ -240,13 +260,12 @@ body {
   transform: translate(-50%, -50%);
 }
 
-.note-app-container {
-  width: 98vw; /* 几乎占据整个屏幕宽度 */
-  height: 96vh; /* 几乎占据整个屏幕高度 */
-  max-width: 1800px; /* 增大最大宽度 */
+.note-app-container, .chat-app-container {
+  width: 100%; /* 使用100%宽度填满父容器 */
+  height: 100%; /* 使用100%高度填满父容器 */
   background: #fff;
-  border-radius: 12px; /* 减小圆角 */
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  border-radius: 8px; /* 统一圆角 */
+  box-shadow: none; /* 移除阴影，因为父容器已有阴影 */
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -254,7 +273,7 @@ body {
   margin: 0; /* 确保没有外边距 */
 }
 
-.note-app-header {
+.note-app-header, .chat-app-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -265,7 +284,7 @@ body {
   height: 30px; /* 固定高度 */
 }
 
-.note-app-header h3 {
+.note-app-header h3, .chat-app-header h3 {
   margin: 0;
   font-size: 1.1em;
   color: #333;
@@ -286,7 +305,7 @@ body {
   color: #333;
 }
 
-.note-app-iframe {
+.note-app-iframe, .chat-app-iframe {
   flex: 1;
   width: 100%;
   height: calc(100% - 31px); /* 减小标题栏高度扣除值，配合新标题栏高度 */
@@ -302,7 +321,7 @@ body {
   left: 50%;
   bottom: 10px; /* Dock栏位于底部 */
   transform: translateX(-50%);
-  z-index: 3000;
+  z-index: 4000; /* 提高任务栏的z-index，确保它始终在最上层 */
   display: flex;
   align-items: flex-end;
   background: rgba(255,255,255,0.85);
@@ -365,8 +384,8 @@ body {
   left: 50%;
   bottom: -5px;
   transform: translateX(-50%);
-  width: 0; 
-  height: 0; 
+  width: 0;
+  height: 0;
   border-left: 5px solid transparent;
   border-right: 5px solid transparent;
   border-top: 5px solid #222;
@@ -470,19 +489,19 @@ body {
 }
 
 @media (max-width: 600px) {
-  .mac-dock { 
-    min-width: 60px; 
-    padding: 4px 10px; 
-    height: 24px; 
-    gap: 8px; 
+  .mac-dock {
+    min-width: 60px;
+    padding: 4px 10px;
+    height: 24px;
+    gap: 8px;
   }
-  .dock-app { 
-    width: 20px; 
-    height: 20px; 
+  .dock-app {
+    width: 20px;
+    height: 20px;
   }
-  .dock-app img { 
-    width: 14px; 
-    height: 14px; 
+  .dock-app img {
+    width: 14px;
+    height: 14px;
   }
   .dock-app-label {
     font-size: 11px;

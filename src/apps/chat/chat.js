@@ -1,3 +1,55 @@
+// Vue 应用
+const { createApp } = Vue;
+
+// 创建 Vue 应用
+const app = createApp({
+    data() {
+        return {
+            isLoggedIn: false,
+            username: ''
+        };
+    },
+
+    mounted() {
+        // 从localStorage检查登录状态
+        this.checkLoginStatus();
+
+        // 添加消息监听器，用于接收父窗口的登录状态更新
+        window.addEventListener('message', this.handleParentMessage);
+    },
+
+    beforeUnmount() {
+        // 移除消息监听器
+        window.removeEventListener('message', this.handleParentMessage);
+    },
+
+    methods: {
+        // 处理来自父窗口的消息
+        handleParentMessage(event) {
+            const message = event.data;
+            console.log('[Chat] 收到父窗口消息:', message);
+
+            if (message.type === 'updateLoginStatus') {
+                this.isLoggedIn = message.isLoggedIn;
+                this.username = message.username;
+                console.log('[Chat] 已更新登录状态:', this.isLoggedIn, this.username);
+            }
+        },
+
+        // 检查登录状态
+        checkLoginStatus() {
+            // 从localStorage检查登录状态
+            const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+            const username = localStorage.getItem('username');
+
+            this.isLoggedIn = isLoggedIn;
+            this.username = username;
+
+            console.log('[Chat] 检查登录状态:', this.isLoggedIn, this.username);
+        }
+    }
+}).mount('#app');
+
 document.addEventListener('DOMContentLoaded', function() {
     // 获取DOM元素
     const chatMessages = document.getElementById('chat-messages');
@@ -6,6 +58,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 发送消息的函数
     async function sendMessage() {
+        // 检查登录状态
+        if (!app.isLoggedIn) {
+            console.warn('用户未登录，无法发送消息');
+            return;
+        }
         const message = messageInput.value.trim();
 
         if (message) {

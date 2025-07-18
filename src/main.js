@@ -3,13 +3,13 @@ const { createApp, nextTick } = Vue;
 // 创建全局菜单管理器
 const ContextMenuManager = {
   activeMenu: null,
-  
+
   create(options) {
     // 如果已有菜单，则先关闭
     if (this.activeMenu) {
       this.close();
     }
-    
+
     // 创建菜单容器
     const container = document.createElement('div');
     container.className = 'global-context-menu-container';
@@ -22,7 +22,7 @@ const ContextMenuManager = {
       z-index: 20000;
       pointer-events: none;
     `;
-    
+
     // 创建菜单元素
     const menu = document.createElement('div');
     menu.className = 'dock-context-menu';
@@ -42,7 +42,7 @@ const ContextMenuManager = {
       z-index: 9999;
       animation: fadeIn 0.15s ease-out;
     `;
-    
+
     // 添加菜单选项
     options.items.forEach(item => {
       const menuItem = document.createElement('div');
@@ -50,18 +50,18 @@ const ContextMenuManager = {
       if (item.selected) {
         menuItem.classList.add('selected');
       }
-      
+
       // 创建图标
       if (item.icon) {
         const icon = document.createElement('i');
         icon.className = `menu-icon ${item.icon}`;
         menuItem.appendChild(icon);
       }
-      
+
       // 添加文本
       const text = document.createTextNode(item.text);
       menuItem.appendChild(text);
-      
+
       // 添加点击事件
       menuItem.addEventListener('click', () => {
         if (typeof item.onClick === 'function') {
@@ -69,47 +69,47 @@ const ContextMenuManager = {
         }
         this.close();
       });
-      
+
       menu.appendChild(menuItem);
     });
-    
+
     // 将菜单添加到容器
     container.appendChild(menu);
     document.body.appendChild(container);
-    
+
     // 调整菜单位置，确保在视口内
     const rect = menu.getBoundingClientRect();
     const winWidth = window.innerWidth;
     const winHeight = window.innerHeight;
-    
+
     if (rect.right > winWidth) {
       menu.style.left = (winWidth - rect.width - 10) + 'px';
     }
-    
+
     if (rect.bottom > winHeight) {
       menu.style.top = (winHeight - rect.height - 10) + 'px';
     }
-    
+
     // 添加全局点击事件，关闭菜单
     const clickHandler = (e) => {
       if (!menu.contains(e.target)) {
         this.close();
       }
     };
-    
+
     // 延迟添加点击事件，避免立即触发
     setTimeout(() => {
       document.addEventListener('click', clickHandler);
     }, 10);
-    
+
     this.activeMenu = {
       element: container,
       clickHandler
     };
-    
+
     return this.activeMenu;
   },
-  
+
   close() {
     if (this.activeMenu) {
       document.removeEventListener('click', this.activeMenu.clickHandler);
@@ -125,27 +125,27 @@ const authManager = {
   async validateCredentials(username, password) {
     // 获取当前环境设置
     const backendType = localStorage.getItem('backendType') || 'internal';
-    
+
     // 尝试使用当前环境
     const result = await this.tryLogin(username, password, backendType);
-    
+
     // 如果当前环境失败，尝试另一个环境
     if (!result.success) {
       const alternativeType = backendType === 'public' ? 'internal' : 'public';
       console.log(`当前环境(${backendType})登录失败，尝试使用${alternativeType}环境...`);
       return await this.tryLogin(username, password, alternativeType);
     }
-    
+
     return result;
   },
-  
+
   // 尝试使用指定环境进行登录
   async tryLogin(username, password, backendType) {
     try {
       const apiBaseUrl = backendType === 'public'
         ? 'https://47.97.60.69' // 公网环境
         : 'https://SERVER_IP'; // 内网环境
-      
+
       // 发送请求到后端
       console.log(`正在连接到: ${apiBaseUrl}/api/auth/login`); // 添加日志
       const response = await fetch(`${apiBaseUrl}/api/auth/login`, {
@@ -155,7 +155,7 @@ const authManager = {
         },
         body: JSON.stringify({ username, password }),
       });
-      
+
       // 检查响应状态
       if (!response.ok) {
         console.error(`服务器返回错误状态码: ${response.status}`);
@@ -164,13 +164,13 @@ const authManager = {
         console.log('服务器响应内容:', errorText);
         return { success: false, message: `服务器错误: ${response.status}`, backendType };
       }
-      
+
       const data = await response.json();
       if (data.success) {
         // 如果登录成功，记住这个成功的环境
         localStorage.setItem('backendType', backendType);
       }
-      return { 
+      return {
         success: data.success,
         message: data.message,
         backendType
@@ -180,7 +180,7 @@ const authManager = {
       return { success: false, message: '网络错误，请稍后再试', backendType };
     }
   },
-  
+
   // 登录 - 异步方法
   async login(username, password) {
     const result = await this.validateCredentials(username, password);
@@ -195,13 +195,13 @@ const authManager = {
     }
     return false;
   },
-  
+
   // 退出
   logout() {
     localStorage.removeItem('isLoggedIn');
     localStorage.removeItem('username');
   },
-  
+
   // 检查登录状态
   checkLoginStatus() {
     return {
@@ -227,7 +227,7 @@ createApp({
       loginError: ''
     };
   },
-  
+
   mounted() {
     // 初始化时确保应用窗口是关闭的
     const noteAppModal = document.getElementById('noteAppModal');
@@ -240,7 +240,7 @@ createApp({
       modalMask.classList.add('hidden');
       modalMask.style.display = 'none';
     }
-    
+
     // 初始化聊天应用窗口关闭状态
     const chatAppModal = document.getElementById('chatAppModal');
     const chatModalMask = document.getElementById('chatModalMask');
@@ -252,28 +252,40 @@ createApp({
       chatModalMask.classList.add('hidden');
       chatModalMask.style.display = 'none';
     }
-    
+
     // 注册全局右键菜单处理
     document.addEventListener('contextmenu', (e) => {
       // 关闭任何已打开的菜单
       ContextMenuManager.close();
     });
-    
+
     // 特别注册Dock栏的右键事件
-    const dockApp = document.querySelector('.dock-app');
-    if (dockApp) {
+    const dockApps = document.querySelectorAll('.dock-app');
+    dockApps.forEach(dockApp => {
       dockApp.addEventListener('contextmenu', (e) => {
         e.preventDefault();
         e.stopPropagation();
         this.showDockMenu(e);
       });
+    });
+
+    // 确保任务栏始终可点击
+    const macDock = document.querySelector('.mac-dock');
+    if (macDock) {
+      // 阻止冒泡，确保任务栏事件不会传递到遮罩层
+      macDock.addEventListener('click', (e) => {
+        e.stopPropagation();
+      });
+      macDock.addEventListener('contextmenu', (e) => {
+        e.stopPropagation();
+      });
     }
   },
-  
+
   unmounted() {
     ContextMenuManager.close();
   },
-  
+
   methods: {
     // 登录方法 - 异步
     async login() {
@@ -281,10 +293,10 @@ createApp({
         this.loginError = '请输入用户名和密码';
         return;
       }
-      
+
       // 显示加载状态
       this.loginError = '登录中...';
-      
+
       try {
         const success = await authManager.login(this.loginUsername, this.loginPassword);
         if (success) {
@@ -294,9 +306,10 @@ createApp({
           this.loginError = '';
           this.loginUsername = '';
           this.loginPassword = '';
-          
-          // 通知iframe内的笔记应用更新登录状态
+
+          // 通知iframe内的应用更新登录状态
           this.notifyLoginStatusToNotes();
+          this.notifyLoginStatusToChat();
         } else {
           this.loginError = '用户名或密码错误';
         }
@@ -305,17 +318,18 @@ createApp({
         this.loginError = '登录失败，请稍后再试';
       }
     },
-    
+
     // 退出登录
     logout() {
       authManager.logout();
       this.isLoggedIn = false;
       this.username = '';
-      
-      // 通知iframe内的笔记应用更新登录状态
+
+      // 通知iframe内的应用更新登录状态
       this.notifyLoginStatusToNotes();
+      this.notifyLoginStatusToChat();
     },
-    
+
     // 通知笔记应用登录状态
     notifyLoginStatusToNotes() {
       const iframe = document.getElementById('notesIframe');
@@ -327,7 +341,19 @@ createApp({
         }, '*');
       }
     },
-    
+
+    // 通知聊天应用登录状态
+    notifyLoginStatusToChat() {
+      const iframe = document.getElementById('chatIframe');
+      if (iframe && iframe.contentWindow) {
+        iframe.contentWindow.postMessage({
+          type: 'updateLoginStatus',
+          isLoggedIn: this.isLoggedIn,
+          username: this.username
+        }, '*');
+      }
+    },
+
     // 切换笔记应用状态（打开或关闭）
     toggleNoteApp() {
       // 如果应用已经打开，则关闭它
@@ -335,10 +361,10 @@ createApp({
         this.closeNoteApp();
         return;
       }
-      
+
       // 否则打开应用
       this.showNoteApp = true;
-      
+
       // 显示应用窗口
       const noteAppModal = document.getElementById('noteAppModal');
       const modalMask = document.getElementById('modalMask');
@@ -350,7 +376,7 @@ createApp({
         modalMask.classList.remove('hidden');
         modalMask.style.display = 'block';
       }
-      
+
       // 加载笔记应用的内容到iframe
       const iframe = document.getElementById('notesIframe');
       if (iframe) {
@@ -358,7 +384,7 @@ createApp({
         if (!iframe.getAttribute('src') || iframe.getAttribute('src') === '') {
           iframe.setAttribute('src', 'src/apps/notes/index.html');
         }
-        
+
         // 当iframe加载完成后，发送登录状态信息
         iframe.onload = () => {
           this.notifyLoginStatusToNotes();
@@ -367,11 +393,11 @@ createApp({
         console.error('找不到笔记应用iframe元素');
       }
     },
-    
+
     // 关闭笔记应用
     closeNoteApp() {
       this.showNoteApp = false;
-      
+
       // 隐藏应用窗口
       const noteAppModal = document.getElementById('noteAppModal');
       const modalMask = document.getElementById('modalMask');
@@ -384,19 +410,19 @@ createApp({
         modalMask.style.display = 'none';
       }
     },
-    
+
     // 显示Dock菜单
     showDockMenu(event) {
       event.preventDefault();
       event.stopPropagation();
       console.log('右键菜单触发', event.clientX, event.clientY);
-      
+
       // 更新调试信息
       const debugElement = document.getElementById('rightClickStatus');
       if (debugElement) {
         debugElement.textContent = '已触发 - X:' + event.clientX + ', Y:' + event.clientY;
       }
-      
+
       // 创建右键菜单
       ContextMenuManager.create({
         x: event.clientX,
@@ -409,7 +435,7 @@ createApp({
             onClick: () => {
               this.backendType = 'public';
               localStorage.setItem('backendType', 'public');
-              
+
               // 通知iframe内的笔记应用更新环境
               const iframe = document.getElementById('notesIframe');
               if (iframe && iframe.contentWindow) {
@@ -427,12 +453,12 @@ createApp({
             onClick: () => {
               this.backendType = 'internal';
               localStorage.setItem('backendType', 'internal');
-              
+
               // 通知iframe内的笔记应用更新环境
               const iframe = document.getElementById('notesIframe');
               if (iframe && iframe.contentWindow) {
                 iframe.contentWindow.postMessage({
-                  type: 'updateBackendType', 
+                  type: 'updateBackendType',
                   backendType: 'internal'
                 }, '*');
               }
@@ -441,66 +467,87 @@ createApp({
         ]
       });
     },
-    
+
     // 聊天应用相关方法
     toggleChatApp() {
       // 如果笔记应用正在显示，先关闭
       if (this.showNoteApp) {
         this.closeNoteApp();
       }
-      
+
       // 切换聊天应用的显示状态
       this.showChatApp = !this.showChatApp;
-      
+
       // 获取DOM元素
       const chatAppModal = document.getElementById('chatAppModal');
       const chatModalMask = document.getElementById('chatModalMask');
       const chatIframe = document.getElementById('chatIframe');
-      
+
       if (this.showChatApp) {
-        // 显示聊天应用
+        // 显示聊天应用，确保与任务栏不重叠
         chatAppModal.style.display = 'flex';
         chatModalMask.style.display = 'block';
-        
+
+        // 删除动态计算的高度设置，使用CSS中固定的设置
+
+        // 确保登录按钮被覆盖
+        const loginContainer = document.querySelector('.login-container');
+        if (loginContainer) {
+          loginContainer.classList.add('below-app');
+        }
+
         // 设置iframe的src，确保使用相对于当前页面的相对路径
         if (!chatIframe.src || chatIframe.src === 'about:blank' || chatIframe.src === window.location.href) {
           // 获取当前页面的URL路径
           const currentPath = window.location.pathname;
           const pathPrefix = currentPath.endsWith('/') ? '' : currentPath.substring(0, currentPath.lastIndexOf('/') + 1);
-          
+
           // 构建聊天应用的相对路径
           const chatPath = pathPrefix + 'src/apps/chat/index.html';
-          
+
           // 设置iframe src
           chatIframe.src = chatPath;
           console.log('加载聊天应用:', chatPath);
         }
-        
+
         // 添加动画类
         nextTick(() => {
           chatAppModal.classList.remove('hidden');
           chatModalMask.classList.remove('hidden');
           chatAppModal.classList.add('visible');
           chatModalMask.classList.add('visible');
+
+          // 等iframe加载完成后传递登录状态
+          chatIframe.onload = () => {
+            this.notifyLoginStatusToChat();
+          };
         });
       } else {
         // 隐藏聊天应用
         this.closeChatApp();
       }
     },
-    
+
     closeChatApp() {
       this.showChatApp = false;
-      
+
       const chatAppModal = document.getElementById('chatAppModal');
       const chatModalMask = document.getElementById('chatModalMask');
-      
+
       // 添加隐藏动画
       chatAppModal.classList.add('hidden');
       chatAppModal.classList.remove('visible');
       chatModalMask.classList.add('hidden');
       chatModalMask.classList.remove('visible');
-      
+
+      // 恢复登录按钮状态，如果笔记应用也未打开
+      if (!this.showNoteApp) {
+        const loginContainer = document.querySelector('.login-container');
+        if (loginContainer) {
+          loginContainer.classList.remove('below-app');
+        }
+      }
+
       // 动画结束后隐藏元素
       setTimeout(() => {
         chatAppModal.style.display = 'none';

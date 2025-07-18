@@ -45,27 +45,30 @@
       </div>
     </div>
 
-    <!-- 笔记应用弹窗 - 使用style控制显示隐藏，而不是v-if -->
-    <div class="modal-mask hidden" id="modalMask" @click="closeNoteApp"></div>
-    <div class="note-app-modal hidden" id="noteAppModal">
-      <div class="note-app-container">
-        <div class="note-app-header">
-          <h3>笔记墙</h3>
-          <button class="close-button" @click="closeNoteApp">&times;</button>
+    <!-- 应用区域 - 应用区域占据除了Dock栏外的全部空间 -->
+    <div class="app-area">
+      <!-- 笔记应用弹窗 - 使用style控制显示隐藏，而不是v-if -->
+      <div class="modal-mask hidden" id="modalMask" @click="closeNoteApp"></div>
+      <div class="note-app-modal hidden" id="noteAppModal">
+        <div class="note-app-container">
+          <div class="note-app-header">
+            <h3>笔记墙</h3>
+            <button class="close-button" @click="closeNoteApp">&times;</button>
+          </div>
+          <iframe id="notesIframe" class="note-app-iframe" src="src/apps/notes/index.html" frameborder="0" title="笔记应用" allow="autoplay; fullscreen"></iframe>
         </div>
-        <iframe id="notesIframe" class="note-app-iframe" src="src/apps/notes/index.html" frameborder="0" title="笔记应用" allow="autoplay; fullscreen"></iframe>
       </div>
-    </div>
-    
-    <!-- 聊天应用弹窗 -->
-    <div class="modal-mask hidden" id="chatModalMask" @click="closeChatApp"></div>
-    <div class="chat-app-modal hidden" id="chatAppModal">
-      <div class="note-app-container">
-        <div class="note-app-header">
-          <h3>聊天</h3>
-          <button class="close-button" @click="closeChatApp">&times;</button>
+      
+      <!-- 聊天应用弹窗 -->
+      <div class="modal-mask hidden" id="chatModalMask" @click="closeChatApp"></div>
+      <div class="chat-app-modal hidden" id="chatAppModal">
+        <div class="chat-app-container">
+          <div class="chat-app-header">
+            <h3>聊天</h3>
+            <button class="close-button" @click="closeChatApp">&times;</button>
+          </div>
+          <iframe id="chatIframe" class="chat-app-iframe" src="" frameborder="0" title="聊天应用" allow="autoplay; fullscreen"></iframe>
         </div>
-        <iframe id="chatIframe" class="note-app-iframe" src="" frameborder="0" title="聊天应用" allow="autoplay; fullscreen"></iframe>
       </div>
     </div>
 
